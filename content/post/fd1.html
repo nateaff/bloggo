@@ -1,0 +1,212 @@
+---
+title: "Fractal Dimension"
+author: "Nathanael Aff"
+date: 2017-06-14T21:13:14-05:00
+categories: ["R", "Statistics"]
+tags: ["R", "Time Series"]
+---
+
+
+
+<p>When I was introduced to fractal(or fractional) dimension it was in the abstract setting of sets. Sometimes fractal dimension is also lumped into the category of nonlinear features that are associated with dynamical systems. There is a more direct relation, though, to more familiar statistical properties of random processes. On top of that, changes in fractal dimension are fairly easy to identify in the graph of a function.</p>
+<p>Roughly speaking, fractal dimension is a local property of a function (more precisely, its graph); Fractal dimension measures a relation of points that are close to each other in the time series. In contrast, the Hurst parameter is a measure of a global property, a measure of a relation of points that are distant from each other.</p>
+<p>(If you are interested in more mathematical details, this post is based on a nice and not too long <a href="(https://arxiv.org/abs/physics/0109031)">paper</a> by Tilmann Gneiting.)</p>
+<div id="autocorrelation-function-acf" class="section level3">
+<h3>Autocorrelation Function (ACF)</h3>
+<p>Both of the Hurst parameter and fractal dimension properties are related to the behavior of the autocorrelation function of a random process.</p>
+<p>The <a href="https://en.wikipedia.org/wiki/Autocorrelation">autocorrelation function</a> is the correlation, or similarity, of a function values with itself at various lags <span class="math inline">\(h\)</span>. To simplify things, we assume we have a random process with mean 0 and variance 1. Then the expression for the autocorrelation function is</p>
+<p><span class="math display">\[
+  c(h)  = E[X(t)X(t + h)],  h \in \mathbb{R^n}.
+\]</span> Fractal dimension characterizes how the the autocorrelation function <span class="math inline">\(c(h)\)</span> behaves as <span class="math inline">\(h\)</span> goes to <span class="math inline">\(0\)</span> while the Hurst parameter characterizes how <span class="math inline">\(c(h)\)</span> behaves as <span class="math inline">\(h\)</span> goes to infinity.</p>
+</div>
+<div id="cauchy-process" class="section level3">
+<h3>Cauchy Process</h3>
+<p>Some random processes, <a href="">Brownian Motion</a>, for instance, have a single parameter that determines both the fractal dimension and the Hurst parameter of the function. The Cauchy process, on the other hand, has two parameters that separately control the fractal dimension(<span class="math inline">\(D\)</span>) and the long-range dependence or Hurst parameter(<span class="math inline">\(H\)</span>). The Cauchy process can be described by its correlation function: <span class="math display">\[
+  c(h) = \left(1+ |h|^{\alpha}\right)^{-\beta/\alpha},  h \in \mathbb{R}^n
+\]</span> with <span class="math inline">\(\alpha \in (0,2]\)</span> and <span class="math inline">\(\beta &gt; 0\)</span>. The fractal dimension of the graph of a sample from an n-dimensional Cauchy process is determined by the parameter <span class="math inline">\(\alpha\)</span>: <span class="math display">\[
+    D =  n + 1 - \frac{\alpha}{2}.
+\]</span> And the Hurst parameter is related to <span class="math inline">\(\beta\)</span>: <span class="math display">\[
+    H =  1 - \frac{\beta}{2}.
+\]</span></p>
+<p>The <code>RandomFields</code> package has a function for simulating the Cauchy process. The <code>RandomFields</code> package generates a time series or random field in two steps. Here I wrapped those steps in another function so that only the data is returned.</p>
+<pre class="r"><code>library(RandomFields)
+library(dplyr)
+
+set.seed(1)
+
+# Convenience wrapper for Cauchy generator
+cauchy2D &lt;- function(alpha, beta){
+  mod &lt;- suppressWarnings(RandomFields::RMgencauchy(alpha, beta))
+  function(n){
+    y = x = seq(0, 1, length.out = n)
+    # Returns R4 object
+    xy = RandomFields::RFsimulate(mod, x = x, y = y, RFoptions(spConform = FALSE))
+    xy@data
+  } 
+}</code></pre>
+<p>The plot below is a set of Cauchy processes corresponding to a grid of paramters <span class="math inline">\(\pi \times \pi\)</span>, <span class="math inline">\(\pi = (0.3, 0,95, 1.6)\)</span>. The plots are labeled with the parameter grid translated into the fractal dimension <span class="math inline">\(D\)</span> and the Hurst parameter <span class="math inline">\(H\)</span>. Fractal dimension is constant on the <strong>columns</strong> and the Hurst parameter is constant on the <strong>rows</strong>.</p>
+<pre class="r"><code># Dimension of field
+n = 100
+# Create a 3 X 3 grid of parameters  
+params &lt;- seq(.3, 1.6, length.out = 3)
+# Transform function parameters to fractal dim. and Hurst parameters
+to_hurst &lt;- function(beta)  1- beta/2
+to_fd &lt;- function(alpha)  2 - alpha/2
+coeffs &lt;- expand.grid(to_fd(params), to_hurst(params)) %&gt;%  
+          apply(., 2, round, digits = 2) 
+
+xs &lt;- params %&gt;%
+      expand.grid(., .)  %&gt;% 
+      apply(., 1, function(x) cauchy2D(x[1], x[2])) %&gt;% 
+      lapply(., function(x) x(n)) %&gt;% 
+      lapply(., data.matrix) %&gt;%
+      lapply(. , matrix, ncol = n, byrow = TRUE) 
+ 
+# Plotting convenience functions
+add_text &lt;- function(k){
+  mtext(side = 1, cex = 0.9, line = 0.5,
+        paste0(&quot;D: &quot;, coeffs[k, 1], &quot;    &quot;,&quot;H: &quot;, coeffs[k, 2]))
+}
+
+plot2D &lt;- function(k){
+  image(xs[[k]], col = viridis::viridis(256), axes = FALSE)    
+  add_text(k)
+}
+
+par(mfrow = c(3,3), mar = c(2,1,1,1))
+layout(matrix(c(1:9), nrow = 3, byrow = TRUE))
+out &lt;- lapply(1:9, plot2D) </code></pre>
+<div class="figure" style="text-align: center"><span id="fig:2Dplot"></span>
+<img src="/post/fd1_files/figure-html/2Dplot-1.png" alt="Cauchy process labeled by fractal dimension (D) and Hurst parameter (H)." width="624" />
+<p class="caption">
+Figure 1: Cauchy process labeled by fractal dimension (D) and Hurst parameter (H).
+</p>
+</div>
+<p>For the above plot, fractal dimension decreases as you go to the right. The effect is pretty clear: as fractal dimension goes down the value of the functions changes more smoothly. The graphs in the first column with high fractal dimension look like static. In fact, for many practical estimators of fractal dimension, random noise has a maximal fractal dimension of 2.</p>
+<p>The effect of the Hurst parameter is a little more subtle. A higher Hurst parameter corresponds to a higher long-range dependence. The highest Hurst parameter is 0.8 along the top row. A high fractal dimension obscures the effect of the Hurst parameter but even in the top left plot and results in some clumping of similar values. This can be compared to the high fractal dimension, low Hurst plot in the lower left, where there is very little clustering of values.</p>
+</div>
+<div id="relation-to-acf" class="section level3">
+<h3>Relation to ACF</h3>
+<p>Another way to see the effect is by looking at the cross sections. Each of the following graphs is a vertical slice from each of the corresponding random fields above.</p>
+<pre class="r"><code>par(mfrow = c(3,3), mar = c(2,1,1,1))
+plot_transects &lt;- function(k){
+  plot(xs[[k]][,10], col = viridis::viridis(10)[3], 
+                    type = &#39;l&#39;,
+                    lwd = 1.6,  
+                    axes = FALSE)
+  add_text(k)
+}
+
+# plot transects
+out &lt;- lapply(1:9, function(k) plot_transects(k))</code></pre>
+<div class="figure" style="text-align: center"><span id="fig:transects"></span>
+<img src="/post/fd1_files/figure-html/transects-1.png" alt="Cross sections of 2D Cauchy process." width="624" />
+<p class="caption">
+Figure 2: Cross sections of 2D Cauchy process.
+</p>
+</div>
+<p>Given the relation of fractal dimension to the autocorrelation function(ACF), we should see the difference in the empirical ACF of each of these time series.</p>
+<pre class="r"><code>par(mfrow = c(3,3), mar = c(2,1,1,1))
+out &lt;- lapply(xs, function(x) acf(x[ ,1], plot = FALSE)) %&gt;% 
+       lapply(., plot, yaxt = &#39;n&#39;) </code></pre>
+<div class="figure" style="text-align: center"><span id="fig:correlation"></span>
+<img src="/post/fd1_files/figure-html/correlation-1.png" alt="Autocorrelation function for lags h =  0-20" width="624" />
+<p class="caption">
+Figure 3: Autocorrelation function for lags h = 0-20
+</p>
+</div>
+<p>For these time series, the plot below shows the values of a fractal dimension estimator against the Hurst parameter of the functions. The plot looks like the parameter grid because changes in the Hurst parameter aren’t affecting the fractal dimension estimator. (The plot matches the functions above when rotated 90 degrees counter-clockwise.)</p>
+<pre class="r"><code># Compute fractal dimension
+get_fd &lt;- function(x) {
+  res &lt;- fractaldim::fd.estimate(x, methods = &quot;variogram&quot;) 
+  res$fd  
+}
+
+transects &lt;- lapply(1:9, function(k) xs[[k]][, 10])
+
+plot(coeffs[,2], lapply(transects, get_fd),  
+            pch = 15,
+            cex = 1.7,
+            col = viridis::viridis(10)[3], 
+            xlab = &quot;Hurst Parameter&quot;, 
+            ylab = &quot;Fractal Dimension Estimate&quot;)</code></pre>
+<p><img src="/post/fd1_files/figure-html/grid-estimate-1.png" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div id="simulations" class="section level3">
+<h3>Simulations</h3>
+<p>I started the post asserting that fractal dimension could be a useful feature for the classification or clustering of time series. Naturally, this depends on whether your time series have the kind of variation in local behavior that is caught by the fractal dimension estimator.</p>
+<p>For these tests, I generated 50 time series of an <a href="https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model">ARMA process</a>. The moving average(MA) component has a random element so each time series will be unique. Only the autoregressive parameters were varied for each time series.</p>
+<pre class="r"><code>set.seed(1)
+
+reps = 50
+t3 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0,5))))
+t1 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.5), ma = c(-5, 0,5))))
+t2 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0,5))))  
+
+ts_list &lt;- list(t1, t2, t3)
+
+pal = viridis::viridis(50)[c(2,25,45)] 
+
+# Sample plot of each function
+
+plot_ts &lt;- function(k){
+  plot(ts_list[[k]][1:250, 10], 
+                   type = &#39;l&#39;,
+                   lwd = 1.7, 
+                   cex = 1.6,
+                   bty = &quot;n&quot;,
+                   yaxt = &quot;n&quot;,
+                   xaxt = &quot;n&quot;,
+                   xlab = paste0(&quot;Sim &quot;, k),
+                   col = pal[k])
+}
+par(mfrow = c(3,1), mar = c(4,1,1,1))
+plot_ts(1); plot_ts(2); plot_ts(3)</code></pre>
+<div class="figure" style="text-align: center"><span id="fig:arimasim"></span>
+<img src="/post/fd1_files/figure-html/arimasim-1.png" alt="Sample from each group ARMA simulations." width="480" />
+<p class="caption">
+Figure 4: Sample from each group ARMA simulations.
+</p>
+</div>
+</div>
+<div id="fractal-dimension-estimators" class="section level3">
+<h3>Fractal Dimension Estimators</h3>
+<p>The <code>R</code> fractal dimension package has a number of estimators of fractal dimension. In <a href="http://bit.ly/2vg1ICb">a paper</a> that accompanies the package, Gneiting et al. compare the robustness of the fractal dimension estimators, which include estimators based on box-counting dimension, wavelets, and spectral density.</p>
+<p>They find the variogram or madogram estimators perform best. The increments of a random process are defined <span class="math inline">\((X(t) - X(t+h))\)</span>, and the <a href="https://en.wikipedia.org/wiki/Variogram">variogram</a> is the squared expectation of the increments: <span class="math display">\[
+ \gamma(h) = \frac{1}{2}E\left(X(t) - X(t + h)\right)^2.
+\]</span> The slope of the <span class="math inline">\(\log-\log\)</span> regression of the variogram to the interval <span class="math inline">\(h\)</span> determines the fractal estimator. The madogram estimator is calculated in the same way but with the absolute value of the increments used instead of the squared value.</p>
+<p>Here’s how the fractal dimension estimate separates samples from our three simulations.</p>
+<pre class="r"><code>library(ggplot2)
+
+# Compute features on each group
+df1 &lt;- apply(t1, 2, get_fd) %&gt;% data.frame
+df2 &lt;- apply(t2, 2, get_fd) %&gt;% data.frame
+df3 &lt;- apply(t3, 2, get_fd) %&gt;% data.frame
+
+fd_df &lt;- rbind(df1, df2, df3)
+fd_df$id &lt;- as.factor(c(rep(&quot;Sim 1&quot;, reps), 
+                        rep(&quot;Sim 2&quot;, reps), 
+                        rep(&quot;Sim 3&quot;, reps))
+                        )
+
+data_long &lt;- reshape2::melt(fd_df, id.vars = c(&quot;id&quot;))
+
+ggplot(data_long, aes(x = value, fill = id)) +
+       geom_density(alpha = 0.6, 
+                aes(y = ..density..), 
+                position = &quot;identity&quot;, 
+                color = NA) + 
+       scale_fill_manual(values= pal) +
+       xlab(&quot;Fractal Dimension&quot;) +
+       ylab(&quot;&quot;) + 
+       theme_minimal() + 
+       theme(
+             panel.grid = element_blank()
+            ) </code></pre>
+<div class="figure" style="text-align: center"><span id="fig:density"></span>
+<img src="/post/fd1_files/figure-html/density-1.png" alt="Smoothed density of fractal dimension estimates for each simulation group." width="624" />
+<p class="caption">
+Figure 5: Smoothed density of fractal dimension estimates for each simulation group.
+</p>
+</div>
+</div>
