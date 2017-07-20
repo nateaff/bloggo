@@ -142,8 +142,7 @@ out <- lapply(xs, function(x) acf(x[ ,1], plot = FALSE)) %>%
        lapply(., plot, yaxt = 'n') 
 ```
 
-For these time series, the plot below shows the values of a fractal dimension estimator against the Hurst parameter of the functions. The plot looks like the parameter grid because changes in the Hurst parameter aren't affecting the fractal dimension estimator. (The plot matches the functions above when rotated 90 degrees counter-clockwise.)
-
+Below is a plot of the values of a fractal dimension estimator against the Hurst parameter for each of the previous time series. The plot looks somewhat like the parameter grid because changes in the Hurst parameter aren't affecting the fractal dimension estimator. (The plot matches the functions above when rotated 90 degrees counter-clockwise.)
 
 ```{r grid-estimate, fig.width = 6.5, fig.height = 5, fig.caption = "Fractal dimension estimate and theoretical Hurst parameter for the nine transect time series."}
 
@@ -161,8 +160,6 @@ plot(coeffs[,2], lapply(transects, get_fd),
             col = viridis::viridis(10)[3], 
             xlab = "Hurst Parameter", 
             ylab = "Fractal Dimension Estimate")
-
-
 ```
 
 ### Simulations 
@@ -172,20 +169,16 @@ I started the post asserting that fractal dimension could be a useful feature fo
 For these tests, I generated 50 time series of an [ARMA process](https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model). The moving average(MA) component has a random element so each time series will be unique. Only the autoregressive parameters were varied for each time series. 
 
 ```{r arimasim, fig.cap = "Sample from each group ARMA simulations.", fig.width = 5, fig.height = 4, echo = TRUE}
-
 set.seed(1)
-
 reps = 50
 t3 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0,5))))
 t1 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.5), ma = c(-5, 0,5))))
 t2 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0,5))))  
 
 ts_list <- list(t1, t2, t3)
-
 pal = viridis::viridis(50)[c(2,25,45)] 
 
 # Sample plot of each function
-
 plot_ts <- function(k){
   plot(ts_list[[k]][1:250, 10], 
                    type = 'l',
@@ -199,7 +192,6 @@ plot_ts <- function(k){
 }
 par(mfrow = c(3,1), mar = c(4,1,1,1))
 plot_ts(1); plot_ts(2); plot_ts(3)
-
 ```
 
 ### Fractal Dimension Estimators
@@ -243,7 +235,6 @@ ggplot(data_long, aes(x = value, fill = id)) +
        theme(
              panel.grid = element_blank()
             ) 
-
 ```
 
 
