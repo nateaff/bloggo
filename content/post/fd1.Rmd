@@ -2,7 +2,7 @@
 title: "Fractal Dimension"
 author: "Nathanael Aff"
 date: 2017-06-14T21:13:14-05:00
-categories: ["R", "Statistics"]
+categories: ["R", "Stats"]
 tags: ["R", "Time Series"]
 ---
  
@@ -180,15 +180,17 @@ pal = viridis::viridis(50)[c(2,25,45)]
 
 # Sample plot of each function
 plot_ts <- function(k){
-  plot(ts_list[[k]][1:250, 10], 
-                   type = 'l',
-                   lwd = 1.7, 
-                   cex = 1.6,
-                   bty = "n",
-                   yaxt = "n",
-                   xaxt = "n",
-                   xlab = paste0("Sim ", k),
-                   col = pal[k])
+  plot(
+        ts_list[[k]][1:250, 10], 
+        type = 'l',
+        lwd = 1.7, 
+        cex = 1.6,
+        bty = "n",
+        yaxt = "n",
+        xaxt = "n",
+        xlab = paste0("Sim ", k),
+        col = pal[k]
+        )
 }
 par(mfrow = c(3,1), mar = c(4,1,1,1))
 plot_ts(1); plot_ts(2); plot_ts(3)
@@ -216,7 +218,8 @@ df2 <- apply(t2, 2, get_fd) %>% data.frame
 df3 <- apply(t3, 2, get_fd) %>% data.frame
 
 fd_df <- rbind(df1, df2, df3)
-fd_df$id <- as.factor(c(rep("Sim 1", reps), 
+fd_df$id <- as.factor(
+                      c(rep("Sim 1", reps), 
                         rep("Sim 2", reps), 
                         rep("Sim 3", reps))
                         )
@@ -224,7 +227,8 @@ fd_df$id <- as.factor(c(rep("Sim 1", reps),
 data_long <- reshape2::melt(fd_df, id.vars = c("id"))
 
 ggplot(data_long, aes(x = value, fill = id)) +
-       geom_density(alpha = 0.6, 
+       geom_density(
+                alpha = 0.6, 
                 aes(y = ..density..), 
                 position = "identity", 
                 color = NA) + 
