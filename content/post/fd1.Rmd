@@ -2,7 +2,7 @@
 title: "Fractal Dimension"
 author: "Nathanael Aff"
 date: 2017-06-14T21:13:14-05:00
-categories: ["R", "Statistics"]
+categories: ["R", "Stats"]
 tags: ["R", "Time Series"]
 ---
  
@@ -18,8 +18,7 @@ knitr::opts_chunk$set(
        dev = 'png')
 ```
 
-When I was introduced to fractal(or fractional) dimension it was in the abstract setting of sets. Sometimes fractal dimension is also lumped into the category of nonlinear features that are associated with dynamical systems. 
-There is a more direct relation, though, to more familiar statistical properties of random processes. On top of that, changes in fractal dimension are fairly easy to identify in the graph of a function.
+When I was introduced to fractal(or fractional) dimension it was in the abstract setting of sets. Sometimes fractal dimension is also lumped into the category of nonlinear features that are associated with dynamical systems. There is a more direct relation, though, to more familiar statistical properties of random processes. On top of that, changes in fractal dimension are fairly easy to identify in the graph of a function. At the end I'll do a quick simulation to show that fractal dimension is also useful for discriminating between time series with similar features.
 
 Roughly speaking, fractal dimension is a local property of a function (more precisely, its graph); Fractal dimension measures a relation of points that are close to each other in the time series. In contrast, the Hurst parameter is a measure of a global property, a measure of a relation of points that are distant from each other. 
 
@@ -33,7 +32,7 @@ Both of the Hurst parameter and fractal dimension properties are related to the 
 The [autocorrelation function](https://en.wikipedia.org/wiki/Autocorrelation) is the correlation, or similarity, of a function values with itself at various lags $h$. To simplify things, we assume we have a random process with mean 0 and variance 1. Then the expression for the autocorrelation function is
 
 $$
-  c(h)  = E[X(t)X(t + h)],  h \in \mathbb{R^n}.
+  c(h)  = E[X(t)X(t + h)], \qquad h \in \mathbb{R^n}.
 $$
 Fractal dimension characterizes how the the autocorrelation function $c(h)$ behaves as $h$ goes to $0$ while the Hurst parameter characterizes how $c(h)$ behaves as $h$ goes to infinity.
 
@@ -42,7 +41,7 @@ Fractal dimension characterizes how the the autocorrelation function $c(h)$ beha
 Some random processes, [Brownian Motion](), for instance, have a single parameter that determines both the fractal dimension and the Hurst parameter of the function. 
 The Cauchy process, on the other hand, has two parameters that separately control the fractal dimension($D$) and the long-range dependence or Hurst parameter($H$). The Cauchy process can be described by its correlation function:
 $$
-  c(h) = \left(1+ |h|^{\alpha}\right)^{-\beta/\alpha},  h \in \mathbb{R}^n
+  c(h) = \left(1+ |h|^{\alpha}\right)^{-\beta/\alpha}, \qquad  h \in \mathbb{R}^n
 $$
 with $\alpha \in (0,2]$ and $\beta > 0$. The fractal dimension of the graph of a sample from an n-dimensional Cauchy process is determined by the parameter $\alpha$:
 $$
@@ -121,10 +120,13 @@ Another way to see the effect is by looking at the cross sections. Each of the f
 ```{r transects, fig.cap = "Cross sections of 2D Cauchy process."}
 par(mfrow = c(3,3), mar = c(2,1,1,1))
 plot_transects <- function(k){
-  plot(xs[[k]][,10], col = viridis::viridis(10)[3], 
-                    type = 'l',
-                    lwd = 1.6,  
-                    axes = FALSE)
+  plot(
+       xs[[k]][, 10], 
+       col = viridis::viridis(10)[3], 
+       type = 'l',
+       lwd = 1.6,  
+       axes = FALSE
+       )
   add_text(k)
 }
 
@@ -138,7 +140,7 @@ Given the relation of fractal dimension to the autocorrelation function(ACF), we
 ```{r correlation, fig.cap = "Autocorrelation function for lags h =  0-20"}
 
 par(mfrow = c(3,3), mar = c(2,1,1,1))
-out <- lapply(xs, function(x) acf(x[ ,1], plot = FALSE)) %>% 
+out <- lapply(xs, function(x) acf(x[, 1], plot = FALSE)) %>% 
        lapply(., plot, yaxt = 'n') 
 ```
 
@@ -154,7 +156,7 @@ get_fd <- function(x) {
 
 transects <- lapply(1:9, function(k) xs[[k]][, 10])
 
-plot(coeffs[,2], lapply(transects, get_fd),  
+plot(coeffs[, 2], lapply(transects, get_fd),  
             pch = 15,
             cex = 1.7,
             col = viridis::viridis(10)[3], 
@@ -171,24 +173,26 @@ For these tests, I generated 50 time series of an [ARMA process](https://en.wiki
 ```{r arimasim, fig.cap = "Sample from each group ARMA simulations.", fig.width = 5, fig.height = 4, echo = TRUE}
 set.seed(1)
 reps = 50
-t3 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0,5))))
-t1 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.5), ma = c(-5, 0,5))))
-t2 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0,5))))  
+t3 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0, 5))))
+t1 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.2), ma = c(-5, 0, 5))))
+t2 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0, 5))))  
 
 ts_list <- list(t1, t2, t3)
-pal = viridis::viridis(50)[c(2,25,45)] 
+pal = viridis::viridis(50)[c(2, 25, 45)] 
 
 # Sample plot of each function
 plot_ts <- function(k){
-  plot(ts_list[[k]][1:250, 10], 
-                   type = 'l',
-                   lwd = 1.7, 
-                   cex = 1.6,
-                   bty = "n",
-                   yaxt = "n",
-                   xaxt = "n",
-                   xlab = paste0("Sim ", k),
-                   col = pal[k])
+  plot(
+        ts_list[[k]][1:250, 10], 
+        type = 'l',
+        lwd = 1.7, 
+        cex = 1.6,
+        bty = "n",
+        yaxt = "n",
+        xaxt = "n",
+        xlab = paste0("Sim ", k),
+        col = pal[k]
+        )
 }
 par(mfrow = c(3,1), mar = c(4,1,1,1))
 plot_ts(1); plot_ts(2); plot_ts(3)
@@ -216,7 +220,8 @@ df2 <- apply(t2, 2, get_fd) %>% data.frame
 df3 <- apply(t3, 2, get_fd) %>% data.frame
 
 fd_df <- rbind(df1, df2, df3)
-fd_df$id <- as.factor(c(rep("Sim 1", reps), 
+fd_df$id <- as.factor(
+                      c(rep("Sim 1", reps), 
                         rep("Sim 2", reps), 
                         rep("Sim 3", reps))
                         )
@@ -224,7 +229,8 @@ fd_df$id <- as.factor(c(rep("Sim 1", reps),
 data_long <- reshape2::melt(fd_df, id.vars = c("id"))
 
 ggplot(data_long, aes(x = value, fill = id)) +
-       geom_density(alpha = 0.6, 
+       geom_density(
+                alpha = 0.6, 
                 aes(y = ..density..), 
                 position = "identity", 
                 color = NA) + 

@@ -6,6 +6,9 @@
     {{ partial "meta.html" . }}
     {{ partial "og.html" . }}
 
+    <link href='//fonts.googleapis.com/css?family={{ .Site.Params.fontbody }}' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family={{ .Site.Params.fontheading }}' rel='stylesheet' type='text/css'>
+
     <link href="{{ .RSSLink }}" rel="alternate" type="application/rss+xml" title="{{ .Site.Title }}" />
     <link rel="shortcut icon" href="/favicon.png">
 
@@ -15,6 +18,15 @@
     <link rel="stylesheet" href="{{ .Site.BaseURL }}css/style.css">
 
     <link href="http://gmpg.org/xfn/11" rel="profile">
-    
+        <style>
+        body {
+        font-family: '{{ replace .Site.Params.fontbody "+" " "}}';
+        }
+
+        h1, h2, h3,
+        h4, h5, h6 {
+        font-family: '{{ replace .Site.Params.fontheading "+" " "}}';
+        }
+        </style>   
     {{ .Hugo.Generator }}
 </head>
