@@ -1,4 +1,0 @@
-[submodule "public"]
-	path = public
-	url = git@github.com:nwaff/nwaff.github.io
-	branch = master
