@@ -11,22 +11,21 @@ knitr::opts_chunk$set(
        fig.align = 'center', 
        echo=TRUE, 
        warning=FALSE, 
-       message=FALSE, 
+       message=FALSE,   
        results = "hide",
        fig.width = 6.5, 
        fig.height = 6.5,
        dev = 'png')
 ```
 
-When I was introduced to fractal(or fractional) dimension it was in the abstract setting of sets. Sometimes fractal dimension is also lumped into the category of nonlinear features that are associated with dynamical systems. There is a more direct relation, though, to more familiar statistical properties of random processes. On top of that, changes in fractal dimension are fairly easy to identify in the graph of a function. At the end I'll do a quick simulation to show that fractal dimension is also useful for discriminating between time series with similar features.
+When I was introduced to fractal(or fractional) dimension it was in the abstract setting of sets. In applied contexts, I have also seen fractal dimension lumped into the category of nonlinear features that are associated with dynamical systems. Fractal dimension can, more intuitively, be thought as describing the local roughness of a graph. This makes changes in fractal dimension when isolated from other properties, fairly easy to identify in the graph of a function, or random process. On top of that, the fractal dimension of random process can be described in terms of the autocorrelation function of a time series. This links fractal dimension to a more familiar statistical concept.
 
-Roughly speaking, fractal dimension is a local property of a function (more precisely, its graph); Fractal dimension measures a relation of points that are close to each other in the time series. In contrast, the Hurst parameter is a measure of a global property, a measure of a relation of points that are distant from each other. 
+Roughly speaking, fractal dimension measures a relation of points that are close to each other in the time series: it describes a property of the time series that holds at the finest resolution. In contrast to this local property, the Hurst parameter is a global property of a time series, a measure of the relation between points in a time series that are distant from each other. 
 
  (If you are interested in more mathematical details, this post is based on a nice and not too long [paper]((https://arxiv.org/abs/physics/0109031)) by Tilmann Gneiting.)
 
 ### Autocorrelation Function (ACF)
   
-
 Both of the Hurst parameter and fractal dimension properties are related to the behavior of the autocorrelation function of a random process. 
 
 The [autocorrelation function](https://en.wikipedia.org/wiki/Autocorrelation) is the correlation, or similarity, of a function values with itself at various lags $h$. To simplify things, we assume we have a random process with mean 0 and variance 1. Then the expression for the autocorrelation function is
@@ -72,7 +71,7 @@ cauchy2D <- function(alpha, beta){
 }
 ``` 
 
-The plot below is a set of Cauchy processes corresponding to a grid of paramters $\pi \times \pi$, $\pi = (0.3, 0,95, 1.6)$. The plots are labeled with the parameter grid translated into the fractal dimension $D$ and the Hurst parameter $H$. Fractal dimension is constant on the **columns** and the Hurst parameter is constant on the **rows**.
+The plot below is a set of Cauchy processes corresponding to a grid of parameters $\pi \times \pi$, $\pi = (0.3, 0,95, 1.6)$. The plots are labeled with the parameter grid translated into the fractal dimension $D$ and the Hurst parameter $H$. Fractal dimension is constant on the **columns** and the Hurst parameter is constant on the **rows**.
  
 ```{r 2Dplot, fig.cap = "Cauchy process labeled by fractal dimension (D) and Hurst parameter (H)."}
 # Dimension of field
@@ -135,7 +134,8 @@ out <- lapply(1:9, function(k) plot_transects(k))
 
 ```
 
-Given the relation of fractal dimension to the autocorrelation function(ACF), we should see the difference in the empirical ACF of each of these time series.
+Given the relation of fractal dimension to the autocorrelation function(ACF), we should see the difference in the empirical ACF of each of these time series. The effect of the Hurst parameter is a little hard to discern but in the left row with constant fractal dimension 1.85, the ACF shows less dependence on past values as the Hurst parameter decreases.
+
 
 ```{r correlation, fig.cap = "Autocorrelation function for lags h =  0-20"}
 
@@ -149,14 +149,14 @@ Below is a plot of the values of a fractal dimension estimator against the Hurst
 ```{r grid-estimate, fig.width = 6.5, fig.height = 5, fig.caption = "Fractal dimension estimate and theoretical Hurst parameter for the nine transect time series."}
 
 # Compute fractal dimension
-get_fd <- function(x) {
+fractal_dim <- function(x) {
   res <- fractaldim::fd.estimate(x, methods = "variogram") 
   res$fd  
 }
 
 transects <- lapply(1:9, function(k) xs[[k]][, 10])
 
-plot(coeffs[, 2], lapply(transects, get_fd),  
+plot(coeffs[, 2], lapply(transects, fractal_dim),  
             pch = 15,
             cex = 1.7,
             col = viridis::viridis(10)[3], 
@@ -166,7 +166,8 @@ plot(coeffs[, 2], lapply(transects, get_fd),
 
 ### Simulations 
 
-I started the post asserting that fractal dimension could be a useful feature for the classification or clustering of time series. Naturally, this depends on whether your time series have the kind of variation in local behavior that is caught by the fractal dimension estimator. 
+Fractal dimension can be a useful feature for the classification or clustering of time series. Here is a simple demonstration of the ability of fractal dimension to discriminate between related ARMA processes.
+Naturally, whether fractal dimension is useful in other contexts depends on whether the time series or random fields in question have the kind of variation in fine scale behavior captured by fractal dimension estimators.
 
 For these tests, I generated 50 time series of an [ARMA process](https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model). The moving average(MA) component has a random element so each time series will be unique. Only the autoregressive parameters were varied for each time series. 
 
@@ -174,8 +175,8 @@ For these tests, I generated 50 time series of an [ARMA process](https://en.wiki
 set.seed(1)
 reps = 50
 t3 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0, 5))))
-t1 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.2), ma = c(-5, 0, 5))))
-t2 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0, 5))))  
+t2 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.2), ma = c(-5, 0, 5))))
+t1 <- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0, 5))))  
 
 ts_list <- list(t1, t2, t3)
 pal = viridis::viridis(50)[c(2, 25, 45)] 
@@ -209,15 +210,15 @@ $$
 $$ 
 The slope of the $\log-\log$ regression of the variogram to the interval $h$ determines the fractal estimator. The madogram estimator is calculated in the same way but with the absolute value of the increments used instead of the squared value.
 
-Here's how the fractal dimension estimate separates samples from our three simulations.
+Here's how the fractal dimension estimate separates samples from our three simulations. 
 
 ```{r density, fig.width = 6.5, fig.height = 3.5, fig.cap = "Smoothed density of fractal dimension estimates for each simulation group."}
 library(ggplot2)
 
 # Compute features on each group
-df1 <- apply(t1, 2, get_fd) %>% data.frame
-df2 <- apply(t2, 2, get_fd) %>% data.frame
-df3 <- apply(t3, 2, get_fd) %>% data.frame
+df1 <- apply(t1, 2, fractal_dim) %>% data.frame
+df2 <- apply(t2, 2, fractal_dim) %>% data.frame
+df3 <- apply(t3, 2, fractal_dim) %>% data.frame
 
 fd_df <- rbind(df1, df2, df3)
 fd_df$id <- as.factor(
@@ -232,8 +233,8 @@ ggplot(data_long, aes(x = value, fill = id)) +
        geom_density(
                 alpha = 0.6, 
                 aes(y = ..density..), 
-                position = "identity", 
-                color = NA) + 
+                position = "identity",
+                color = NA) +
        scale_fill_manual(values= pal) +
        xlab("Fractal Dimension") +
        ylab("") + 
