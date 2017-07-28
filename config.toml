@@ -3,8 +3,8 @@ relativeurls = true
 languageCode = "en-us"
 title = "Nathanael Aff"
 theme = "hugo-theme-minos"
-googleAnalytics = ""
-disqusShortname = ""
+googleAnalytics = "UA-103620819-1"
+disqusShortname = "nateaff.disqus.com"
 ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [permalinks]
