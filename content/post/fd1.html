@@ -115,7 +115,7 @@ out &lt;- lapply(xs, function(x) acf(x[ ,1], plot = FALSE)) %&gt;%
 Figure 3: Autocorrelation function for lags h = 0-20
 </p>
 </div>
-<p>For these time series, the plot below shows the values of a fractal dimension estimator against the Hurst parameter of the functions. The plot looks like the parameter grid because changes in the Hurst parameter aren’t affecting the fractal dimension estimator. (The plot matches the functions above when rotated 90 degrees counter-clockwise.)</p>
+<p>Below is a plot of the values of a fractal dimension estimator against the Hurst parameter for each of the previous time series. The plot looks somewhat like the parameter grid because changes in the Hurst parameter aren’t affecting the fractal dimension estimator. (The plot matches the functions above when rotated 90 degrees counter-clockwise.)</p>
 <pre class="r"><code># Compute fractal dimension
 get_fd &lt;- function(x) {
   res &lt;- fractaldim::fd.estimate(x, methods = &quot;variogram&quot;) 
@@ -137,18 +137,15 @@ plot(coeffs[,2], lapply(transects, get_fd),
 <p>I started the post asserting that fractal dimension could be a useful feature for the classification or clustering of time series. Naturally, this depends on whether your time series have the kind of variation in local behavior that is caught by the fractal dimension estimator.</p>
 <p>For these tests, I generated 50 time series of an <a href="https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model">ARMA process</a>. The moving average(MA) component has a random element so each time series will be unique. Only the autoregressive parameters were varied for each time series.</p>
 <pre class="r"><code>set.seed(1)
-
 reps = 50
 t3 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.5, -0.2), ma = c(-5, 0,5))))
 t1 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.5), ma = c(-5, 0,5))))
 t2 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0,5))))  
 
 ts_list &lt;- list(t1, t2, t3)
-
 pal = viridis::viridis(50)[c(2,25,45)] 
 
 # Sample plot of each function
-
 plot_ts &lt;- function(k){
   plot(ts_list[[k]][1:250, 10], 
                    type = &#39;l&#39;,
