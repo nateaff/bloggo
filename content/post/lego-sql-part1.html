@@ -1,30 +1,37 @@
 ---
-title: "Exploring the Lego dataset with SQL and dplyr"
+title: "Exploring the Lego dataset with Postgres and dplyr"
 author: "Nathanael Aff"
 date: 2017-07-25T23:13:14-05:00
-categories: ["R", "Statistics"]
+categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
 ---
 
 
 
-<div id="databases-and-r-analysis" class="section level1">
-<h1>Databases and R analysis</h1>
-<p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it eases the memory burden of locally analyzing larger datasets. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
-<p>The main goal of this and a planned follow-up tutorial is to introduce several packages useful for handling SQL databases in R. In this tutorial, we will walk through setting up a database and tables using the <code>RPostgreSQL</code> package. In part two we will use the data-manipulation ‘verbs’ from the <code>dplyr</code> package to query and transform the data.</p>
-<p>For the most part, everything will be done from within R and commands should run on any R installation. The major exception is the initial installation of a Postgres database, but I will point to resources for installing and setting up a user in Postgres. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful.</p>
+<p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it means you can avoid loading a full dataset into memory. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
+<p>The main goal of this and a planned follow-up tutorial is to introduce several packages useful for handling SQL databases in R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package. The <code>RPostgreSQL</code> package is one of several packages that use the standardized interface to relational databases provided by the <code>DBI</code> package. This means that, aside from setting up the initial connection to the database, the code here could be used with another database for which the <code>DBI</code> interface has been implemented. For example, the <code>RMySQL</code> and <code>RSQLite</code> are available for the SQLite and MySQL databases.</p>
+<p>In part two we use the data manipulation verbs provided by the <code>dplyr</code> package to query and transform the data. The <code>dplyr</code> package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands. RStudio has a nice overview of database related packages <a href="https://db.rstudio.com/">here</a>.</p>
+<p>For the most part, everything will be done from within R and commands the code should run on any R installation. The major exception is the initial installation of a Postgres database, but I will point to resources for installing and setting up a user in Postgres. There are two other small exceptions and I’ll point this out as they come up. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful.</p>
 <p>The lego dataset can be downloaded manually from <a href="https://www.kaggle.com/rtatman/lego-database">Kaggle</a> with an account. I have mirrored the dataset on S3 to simplify the download step.</p>
 <p>Before getting started install <a href="https://www.postgresql.org/download/">postgreSQL</a>. See the <a href="https://wiki.postgresql.org/wiki/Detailed_installation_guides">installation page</a> for more detailed instruction and there are more <a href="http://www.postgresqltutorial.com/">tutorials here</a>. Once installed you should have a <strong>user</strong> and <strong>password</strong> with which you can set up a database.</p>
+<div id="related-tutorials" class="section level3">
+<h3>Related Tutorials</h3>
+<ul>
+<li><p><a href="http://www.datacarpentry.org/R-ecology-lesson/05-r-and-databases.html">This Data Carpentry</a> tutorial gives an introduction to using <code>dplyr</code> with SQLite and jumps directly into using <code>dplyr</code> syntax.</p></li>
+<li><p><a href="https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Interacting-with-databases-from-Shiny">This UseR2017 talk</a> by Barbara Borge Ribeiro give a quick overview of programmatically accessing relational databases from R</p></li>
+<li><p>Software Carpentry has a introductory tutorial for using databases and SQL which includes lessons for Python and R <a href="https://swcarpentry.github.io/sql-novice-survey/">here</a>.</p></li>
+</ul>
+</div>
 <div id="setup-and-download" class="section level2">
 <h2>Setup and download</h2>
-<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading csv files.</p>
+<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading csv files. Throughout the code I will be using the ‘::’ operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator “%&gt;%”, which I use the <code>import</code> package to make available to the current session.</p>
 <pre class="r"><code># install.packages(&quot;dplyr&quot;)
 # install.packages(&quot;RPostgreSQL&quot;)
 # install.packags(&quot;readr&quot;)
-library(readr)
-library(dplyr)
-library(RPostgreSQL)</code></pre>
-<p>Create a project directory – I’ll be calling it ‘lego-project’ – and set your current directory to that folder. There are a lot of unhelpful warnings so I’m suppressing those for the session by setting the option <code>options(warn=-1)</code>.</p>
+# install.packages(&quot;import&quot;) 
+# Make pipe available -- added to &quot;imports&quot; environment
+import::from(dplyr, &quot;%&gt;%&quot;)</code></pre>
+<p>First, we need to create a project directory – I’ll be calling it ‘lego-project’ – and set your current directory to that folder. There are a lot of unhelpful warnings so I’m suppressing those for the session by setting the option <code>options(warn=-1)</code>.</p>
 <pre class="r"><code>setwd(&quot;~/path/to/my/lego-project&quot;)
 # Supress warnings for this session
 options(warn=-1)</code></pre>
@@ -39,7 +46,7 @@ files &lt;- unzip(tmp)</code></pre>
 </div>
 <div id="check-out-the-data" class="section level2">
 <h2>Check out the data</h2>
-<p>Now we should have the csv files unzipped and the file names in <code>files</code>. If you look at the files you’ll see it includes 8 csv files and one image named <code>downloads_schema.png</code>. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won’t be using here. The schema will come in handy in the next tutorial, however.</p>
+<p>Now we should have the csv files unzipped and the file names in <code>files</code>. If you look at the files you’ll see it includes 8 csv files and one image named <code>downloads_schema.png</code>. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won’t be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.</p>
 <p>For now we remove it from the <code>files</code> list and grab the filenames for later use. If you have not used the pipe function <code>%&gt;%</code>, imported by <code>dplyr</code>, it sends output from the left-hand function to the next function and the <code>.</code> is a placeholder argument representing that output.</p>
 <pre class="r"><code># Check files names
 files 
@@ -50,17 +57,18 @@ filenames &lt;- files %&gt;% sub(&quot;./&quot;, &quot;&quot;, .) %&gt;% sub(&qu
 <p>Here we glance at the first few rows of the data. Several featurs make it a nice alternative to the base <code>read.csv</code> function: <code>read_csv</code> reports the data type of each imported column; It also does not convert strings to factors by default, i.e., <code>stringsAsFactors = FALSE</code>. The result of the function is a <code>tibble</code> which can be treated as a data.frame. Glancing at the <code>head()</code> of the tibble will also report column types.</p>
 <pre class="r"><code># Glance at head of color
 readr::read_csv(files[1], n_max = 5)
+# Look at heads of all files
 lapply(files, readr::read_csv, n_max = 5)</code></pre>
-<p>For a larger dataset, it might also be useful to check the number of rows of data. I’m going to use the <code>system</code> function to make a call to <code>wc</code>. This is system dependent but should work on Linux or macOS and is an efficient way to get the newline count of a file. I’ll turn this into a function so we can use lapply to iterate over the files.</p>
+<p>For a larger dataset, it might also be useful to check the number of rows of data. I’m going to use the <code>system</code> function to make a call to <code>wc</code>. This is system dependent but should work on Linux or macOS and is an efficient way to get the newline count of a file. I’ll turn this into a function so we can use lapply to iterate over the files. (I’ve commented out a similar function for Windows but I haven’t tested that function.)</p>
 <pre><code># For Linux/Unix or Mac
 count_rows &lt;- function(filename){
   system(paste(&quot;wc -l&quot;, filename))
 }
 out &lt;- lapply(files, count_rows)
 # For Windows (did not test)
-count_rows &lt;- function(filename){
-  system(paste(&quot;nd /c /v &#39;A String that is extremely unlikely to occur&#39;,
-        filename))
+# count_rows &lt;- function(filename){
+#  system(paste(&quot;nd /c /v &#39;A String that is extremely unlikely to occur&#39;,
+#        filename))
 </code></pre>
 <p>At this point, we have an overview of the data types and size of each file. The data are either integers or strings. One possibility would be to update, for example, the <code>is_trans</code> field in colors to be a boolean or logical data type. To keep it simple we will be importing the data types as is.</p>
 </div>
@@ -68,34 +76,35 @@ count_rows &lt;- function(filename){
 <h2>Make the database</h2>
 <p>Now we have checked out all the ingredients ready can create our database. You’ll need a working installation of PostgreSQL and the username and password for an account. The following <code>db</code> functions are from the <code>RPostgreSQL</code>(and <code>DBI</code>) package.</p>
 <p>In this example, we’ll use your password as plain text in the script. This isn’t the best practice and I give an alternative below.</p>
-<p>First, we identify the database driver we’ll be using and setup the connection, <code>con</code>, which we can use both create and query the database.</p>
-<pre class="r"><code># Create a connection to the postgresql 
-pg = dbDriver(&quot;PostgreSQL&quot;)
+<p>First, we identify the database driver we’ll be using and setup the connection, <code>con</code>, which we can use both create and query the database. To use another database, only the first line would need to be changed. If you already had SQLite installed, for example, just load the <code>RSQLite</code> packages and call the analagous function to retrieve the SQLite driver. The remaining DBI calls should work, give or take variations in SQL syntax.</p>
+<pre class="r"><code># Access Postgres driver 
+pg = RPostgreSQL::PostgreSQL()
 # Note fake user/password
-con = dbConnect(pg, 
-                user = &quot;my-username&quot;, 
-               password = &quot;#my-password&quot;, 
-               host = &quot;localhost&quot;, 
-               port = 5432)</code></pre>
+con = DBI::dbConnect(pg, 
+                     user = &quot;my-username&quot;, 
+                     password = &quot;#my-password&quot;, 
+                     host = &quot;localhost&quot;, 
+                     port = 5432
+                     )</code></pre>
 <p>If all has gone well we now have a connection to the Postgres and can create our database. With the <code>dbSendQuery</code> command we use any standard PostgreSQL command. We create the database with “create database legos”. and then test use the <code>dbReadTable</code> to create tables. For each csv file, we create a single table using the <code>filenames</code> we created earlier.</p>
-<pre class="r"><code>dbSendQuery(con, &quot;create database legos&quot;)
+<pre class="r"><code>DBI::dbSendQuery(con, &quot;create database legos&quot;)
 # Test writing one file to the database
 colors &lt;- readr::read_csv(files[1])
-dbWriteTable(con, &quot;colors&quot;, colors , row.names=FALSE)
+DBI::dbWriteTable(con, &quot;colors&quot;, colors , row.names=FALSE)
 # Check that it works
-dtab &lt;- dbReadTable(con, &quot;colors&quot;)
+dtab &lt;- DBI::dbReadTable(con, &quot;colors&quot;)
 summary(dtab)
 # Write all files to the database
 for(k in seq_along(files[1:8])){
   cat(&quot;Writing &quot;, filenames[k], &quot;/n&quot;)
   tmp &lt;- readr::read_csv(files[k])
-  dbWriteTable(con, filenames[k], tmp, row.names=FALSE)  
+  DBI::dbWriteTable(con, filenames[k], tmp, row.names=FALSE)  
   rm(tmp)
 }
-dtab &lt;- dbReadTable(con, &quot;sets&quot;)
+dtab &lt;- DBI::dbReadTable(con, &quot;sets&quot;)
 summary(dtab)
 # Close connection
-dbDisconnect(con)</code></pre>
+DBI::dbDisconnect(con)</code></pre>
 <p>At this point, our database has been created and we’re ready to do some analyses. If we were creating a database which we’d be adding more rows to in the future it would be good to define key constraints or specify our column types in more detail.</p>
 </div>
 <div id="interlude-password-encryption-with-keyringr" class="section level2">
@@ -109,10 +118,10 @@ setwd(&quot;~/path/to/my/lego-project&quot;)
 # Get filenames again
 filenames &lt;- dir() %&gt;% sub(&quot;.csv&quot;, &quot;&quot;, .)
 install.packages(&quot;keyringr&quot;)
-library(keyringr)
+
 # Replace plaintext password with keyringr call
-pg = dbDriver(&quot;PostgreSQL&quot;)
-con = dbConnect(pg, 
+pg = RPostgreSQL::PostgreSQL()
+con = DBI::dbConnect(pg, 
                 user = &quot;postgres&quot;, 
                 password = keyringr::decrypt_gk_pw(&quot;db lego user myusername&quot;), 
                 host = &quot;localhost&quot;, 
@@ -122,22 +131,22 @@ con = dbConnect(pg,
 <div id="checking-the-database-schema" class="section level2">
 <h2>Checking the database schema</h2>
 <p>We retrieved two tables above to verify that they had been created. It would be nice to verify all the tables were created and to check the database’s current schema. Since we have a list of the table names, we’ll create a function that takes the table names so we can loop over the functions with lapply.</p>
-<p>The <a href="https://www.postgresql.org/docs/9.1/static/information-schema.html">information schema</a> is a set of views containing information about the database, user roles, data types, etc. We will query the column view to check the data type and maximum character length.</p>
-<p>When <code>dbSendQuery</code> does not return data until we call the <code>dbFetch</code> function. If you have not fetched the data you’ll get an error about ‘impending rows’. Clear the list with <code>dbClearResult(dbListResults(con)[[1]])</code>.</p>
+<p>The <a href="https://www.postgresql.org/docs/9.1/static/information-schema.html">information schema</a> is a set of views containing information about the database, user roles, column data types and a lot more. We will query the column view to check the data type and maximum character length.</p>
+<p>A side note: The <code>dbSendQuery</code> function does not return data until we call the <code>dbFetch()</code>. If you have not fetched the data you’ll get an error about ‘impending rows’. Clear the list with <code>dbClearResult(dbListResults(con)[[1]])</code>.</p>
 <pre class="r"><code># Function to check table schema
 get_schema_query &lt;- function(tab){
   paste0(&quot;select column_name, data_type, character_maximum_length&quot;, 
   &quot; from INFORMATION_SCHEMA.COLUMNS where table_name = &#39;&quot;,tab,&quot;&#39;;&quot;)
 }
 # Check an example
-res &lt;- dbSendQuery(con, get_schema_query(&quot;sets&quot;))
-dbFetch(res)
-dbClearResult(res)
+res &lt;- DBI::dbSendQuery(con, get_schema_query(&quot;sets&quot;))
+DBI::dbFetch(res)
+DBI::dbClearResult(res)
 # Create function from previous example
 check_schemas &lt;- function(tab){
-  res &lt;- dbSendQuery(con, get_schema_query(tab))
-  out &lt;- dbFetch(res)
-  dbClearResult(res)
+  res &lt;- DBI::dbSendQuery(con, get_schema_query(tab))
+  out &lt;- DBI::dbFetch(res)
+  DBI::dbClearResult(res)
   out
 }
 # Check all tables
@@ -149,19 +158,19 @@ names(schemas) &lt;- filenames  </code></pre>
 <p>In the next tutorial, I’ll go over using <code>dplyr</code> functions to do some basic querying of the data. But we’ve made it this far so let’s plot something. We’ll query the color data set and plot all the colors used in lego sets since 1950.</p>
 <p>Colors are stored in the <code>rgb</code> column and transparency in <code>is_trans</code>. Here we pass <code>dbSendQuery</code> a basic SQL select command.</p>
 <pre class="r"><code># Select rgb and is_trans columns
-res &lt;- dbSendQuery(con, &quot;select rgb, is_trans from colors&quot;)
-rgb_df &lt;- as_tibble(dbFetch(res))
-dbClearResult(res)
+res &lt;- DBI::dbSendQuery(con, &quot;select rgb, is_trans from colors&quot;)
+rgb_df &lt;- DBI::dbFetch(res)
+DBI::dbClearResult(res)
 # Check data
 dim(rgb_df)
 head(rgb_df)</code></pre>
-<p>The data columns have the data type character. The <code>rgb</code> colors are in hexadecimal which R can read fine. The values do not reflect the transparency. We use two <code>dplyr</code> verbs to count the number of transparent colors. In the next line, we add a column with the color adjusted for transparency. The <code>ifelse</code> statement sets the new column, named <code>rgbt</code>, to the straight <code>rgb</code> value if <code>is_trans</code> is false, otherwise, it adds an alpha value determined by the <code>adjustcolor</code> function.</p>
+<p>The data columns have the data type character. The <code>rgb</code> colors are in hexadecimal which R can read fine. The values, however, don’t reflect the transparency. We use two <code>dplyr</code> verbs to count the number of transparent colors. In the next line, we add a column with the color adjusted for transparency. The <code>ifelse</code> statement sets the new column, named <code>rgbt</code>, to the straight <code>rgb</code> value if <code>is_trans</code> is false, otherwise, it adds an alpha value determined by the <code>adjustcolor</code> function.</p>
 <pre class="r"><code>rgb_df$rgb &lt;- paste0(&quot;#&quot;, rgb_df$rgb) 
 head(rgb_df)
 # Count number of transparent colors
-rgb_df %&gt;% filter(is_trans == &quot;t&quot;) %&gt;% count()
+rgb_df %&gt;% dplyr::filter(is_trans == &quot;t&quot;) %&gt;% dplyr::count()
 # And rgb + alpha column
-rgb_df &lt;- rgb_df %&gt;% mutate(rgbt = ifelse(is_trans ==  &quot;f&quot;, rgb,adjustcolor(rgb, 0.5)))</code></pre>
+rgb_df &lt;- rgb_df %&gt;% dplyr::mutate(rgbt = ifelse(is_trans ==  &quot;f&quot;, rgb,adjustcolor(rgb, 0.5)))</code></pre>
 <p>Now we plot the results. The <code>sort</code> function orders the hex values alphanumerically, which isn’t a perfect color sorting but it’s not too bad either. The second version of the plot breaks the colors into two plots to make</p>
 <pre class="r"><code>par(bg = &quot;gray10&quot;, mar = c(2,1,2,1))
 barplot(
@@ -172,7 +181,7 @@ barplot(
         space = 0
         )</code></pre>
 <p><img src="/post/lego-sql-part1_files/figure-html/unnamed-chunk-2-1.png" width="624" style="display: block; margin: auto;" /></p>
-<p>Cool. But what if plot them all with a little more area? We define the function <code>draw_lego</code> to draw the single rectangle</p>
+<p>Cool, although it’s hard to tell what affect transparency has. But what if plot them all with a little more area? We define the function <code>draw_lego</code> to draw the single rectangle</p>
 <pre class="r"><code># Draw a single square
 draw_lego &lt;- function(col){
   plot(5,5, type = &quot;n&quot;, axes = FALSE)
@@ -191,14 +200,14 @@ draw_lego &lt;- function(col){
 op &lt;- par(bg = &quot;gray12&quot;)
 plot.new()
 
-par(mfrow = c(9, 15), mar = c(0.7, 0.5, 1, 0.5))
+par(mfrow = c(9, 15), mar = c(0.7, 0.7, 1, 0.7))
 cols &lt;- sort(rgb_df$rgbt)
 for(k in 1:length(cols))  draw_lego(cols[k])</code></pre>
 <p><img src="/post/lego-sql-part1_files/figure-html/squares-1.png" width="624" style="display: block; margin: auto;" /></p>
-<p>Maybe a little corny, not perfect, but good enough for now.</p>
-<p>In the follow-up post, I’ll go over using <code>dplyr</code> to query, filter, and transform data from our lego database. In order to look at more aspects of the data, we’ll also need to do some basic joins. I’ll put it together to look at how lego colors have changed over time.</p>
-<pre class="r"><code>dbDisconnect(con)
+<p>Maybe a little corny, but good enough for now.</p>
+<p>In the follow-up post, I’ll go over using <code>dplyr</code> to query, filter, and transform data from our lego database. In order to explore the data in more detail, we’ll also need to do some basic joins.</p>
+<p>Finally, for this session, we need to clean up the open connection and reset the warnings option.</p>
+<pre class="r"><code>DBI::dbDisconnect(con)
 # Unsupress warnings
 options(warn= 0)</code></pre>
-</div>
 </div>
