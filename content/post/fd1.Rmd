@@ -1,5 +1,5 @@
 ---
-title: "Fractal Dimension"
+title: "Fractal dimension"
 author: "Nathanael Aff"
 date: 2017-06-14T21:13:14-05:00
 categories: ["R", "Stats"]

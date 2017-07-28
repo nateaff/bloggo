@@ -1,5 +1,5 @@
 ---
-title: "The lego data set with SQL and dplyr"
+title: "Exploring the Lego dataset with SQL and dplyr"
 author: "Nathanael Aff"
 date: 2017-07-25T23:13:14-05:00
 categories: ["R", "Statistics"]
