@@ -20,4 +20,4 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 [params]
     katex = true
     description = "A website built through Hugo and blogdown."
-
+    smartToc = true
