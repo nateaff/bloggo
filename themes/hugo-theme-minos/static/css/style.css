@@ -148,11 +148,14 @@ body {
 #container {
   position: relative;
 }
+#header{
+  background-color: #222;
+}
 .logo {
   width: 94px;
   height: 57px;
   background-image: url("images/logo.png");
-  -webkit-background-size: 74px 28px;
+  -webkit-background-size: 4px 28px;
   -moz-background-size: 74px 28px;
   background-size: 74px 28px;
   background-position: left center;
@@ -160,9 +163,9 @@ body {
 }
 .logo-text {
   width: auto;
-  color: #000023;
-  font-size: 24px;
-  font-weight: 550;
+  color: #eee;
+  font-size: 28px;
+  font-weight: 500;
   line-height: 57px;
   margin-right: 25px;
   text-decoration: none;
@@ -178,7 +181,6 @@ a.article-title,
 .archive-tag-wrap a,
 .archive-article-title,
 #page-nav a,
-#footer a,
 .article-entry .gist .gist-file .gist-meta a,
 .layout-wrap-inner .category-list a,
 .tag-cloud a {
@@ -202,11 +204,12 @@ a.article-title:hover,
 .layout-wrap-inner .category-list a:hover,
 .tag-cloud a:hover {
   color: #40138c;
-  background-color: #ddd;
+  /*color: #6546a8;*/
+  background-color: #aaa;
   /*border-bottom-color: #40138c;
   border-bottom: 1px solid #40138c;*/
 }
-.article-entry a{
+.article-entry a {
   border-bottom: 0px dotted #000;
   color: #523387;
 }
@@ -293,6 +296,7 @@ a.article-title:hover,
 #header-outer {
   height: 100%;
   position: relative;
+  background-color: #222;
 }
 #header-inner {
   position: relative;
@@ -306,7 +310,7 @@ a.article-title:hover,
 #main-nav-toggle,
 .search-form-submit {
   float: left;
-  color: #000023;
+  color: #eee;
   text-decoration: none;
   -webkit-transition: opacity 0.2s;
   -moz-transition: opacity 0.2s;
@@ -330,6 +334,7 @@ a.article-title:hover,
   margin-left: -12px;
   margin-top:2px;
   font-family: FontAwesome;
+  color: #eee;
 }
 #main-nav-toggle:before {
   content: "\f0c9";
@@ -804,13 +809,19 @@ a.article-title:hover,
   color: #ddd;
 }
 #footer {
+  background-color: #222;
   padding: 50px 0;
   text-align: center;
 }
 #footer a {
+  color: #fff;
+  font-weight: 500;
+}
+#footer a:hover {
   font-weight: 500;
 }
 #footer-info {
+  color: #ddd;
   line-height: 1.4em;
   font-size: 0.85em;
 }
