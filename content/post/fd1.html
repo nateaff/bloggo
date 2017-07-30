@@ -146,7 +146,6 @@ t2 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.7, -0.2), ma = c(-5, 0
 t1 &lt;- replicate(reps, arima.sim(n = 500, list(ar = c(0.9, -0.2), ma = c(-5, 0, 5))))  
 
 ts_list &lt;- list(t1, t2, t3)
-
 pal = viridis::viridis(50)[c(2, 25, 45)] 
 
 # Sample plot of each function
