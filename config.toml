@@ -20,11 +20,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [params]
     katex = true
-    description = "A website built through Hugo and blogdown."
-<<<<<<< HEAD
-    smartToc = true
-=======
-    fontbody = "Tinos"
+    description = "A data, math, and programming blog"
+    fontbody = "Amiri"
     fontheading = "Lato"
-
->>>>>>> ad7a58c1f49980fddb707462841e6bb779c57459
+    smartToc = true
