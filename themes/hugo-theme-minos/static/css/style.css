@@ -195,15 +195,20 @@ a.article-title:hover,
 .archive-category-wrap a:hover,
 .archive-tag-wrap a:hover,
 .archive-article-title:hover,
+.outer a:hover,
 #page-nav a:hover,
 #footer a:hover,
 .article-entry .gist .gist-file .gist-meta a:hover,
 .layout-wrap-inner .category-list a:hover,
 .tag-cloud a:hover {
-  border-bottom-color: #000;
+  color: #40138c;
+  background-color: #ddd;
+  /*border-bottom-color: #40138c;
+  border-bottom: 1px solid #40138c;*/
 }
-.article-entry  {
+.article-entry a{
   border-bottom: 0px dotted #000;
+  color: #523387;
 }
 .article-entry h1 {
   font-size: 1.4em;
@@ -277,9 +282,9 @@ a.article-title:hover,
   font-weight: bold;
 }
 #header {
-  font-size: 16px;
+  font-size: 18px;
   position: relative;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px dotted #40138c;
 }
 #header.mobile-on #main-nav,
 #header.mobile-on #sub-nav {
@@ -294,7 +299,7 @@ a.article-title:hover,
   overflow: hidden;
 }
 #main-nav {
-  float: left;
+  float: right;
   margin-left: -15px;
 }
 .main-nav-link,
@@ -308,10 +313,10 @@ a.article-title:hover,
   -ms-transition: opacity 0.2s;
   transition: opacity 0.2s;
   display: block;
-  padding: 20px 15px;
+  padding: 14px 10px;
 }
 .main-nav-link {
-  font-weight: 570;
+  font-weight: 500;
 }
 @media screen and (max-width: 839px) {
   .main-nav-link {
@@ -321,8 +326,9 @@ a.article-title:hover,
 }
 #main-nav-toggle {
   display: none;
-  font-size: 16px;
-  margin-left: -15px;
+  font-size: 20px;
+  margin-left: -12px;
+  margin-top:2px;
   font-family: FontAwesome;
 }
 #main-nav-toggle:before {
@@ -562,7 +568,7 @@ a.article-title:hover,
   margin-top: 0;
 }
 .article-more-link {
-  color: #d2d2d2;
+  color: #484856;
   border-bottom-color: #ddd;
 }
 .article-footer {
@@ -580,7 +586,7 @@ a.article-title:hover,
   clear: both;
 }
 .article-footer a {
-  color: #484856;
+  color: #aaa;
   text-decoration: none;
 }
 .article-footer a:hover {
@@ -607,7 +613,7 @@ a.article-title:hover,
 }
 .article-nav-link-wrap {
   text-decoration: none;
-  text-shadow: 0 1px #fff;
+  text-shadow: 0 0px #fff;
   color: #484856;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
