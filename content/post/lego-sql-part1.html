@@ -24,7 +24,7 @@ tags: ["R", "SQL", "eda"]
 </div>
 <div id="setup-and-download" class="section level2">
 <h2>Setup and download</h2>
-<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading csv files. Throughout the code I will be using the ‘::’ operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator “%&gt;%”, which I use the <code>import</code> package to make available to the current session.</p>
+<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading CSV files. Throughout the code I will be using the ‘::’ operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator “%&gt;%”, which I use the <code>import</code> package to make available to the current session.</p>
 <pre class="r"><code># install.packages(&quot;dplyr&quot;)
 # install.packages(&quot;RPostgreSQL&quot;)
 # install.packags(&quot;readr&quot;)
@@ -35,7 +35,7 @@ import::from(dplyr, &quot;%&gt;%&quot;)</code></pre>
 <pre class="r"><code>setwd(&quot;~/path/to/my/lego-project&quot;)
 # Supress warnings for this session
 options(warn=-1)</code></pre>
-<p>We’ll download the zip to a temporary file and save the csv files to the data directory.</p>
+<p>We’ll download the zip to a temporary file and save the CSV files to the data directory.</p>
 <pre class="r"><code>URL &lt;- &quot;https://s3-us-west-1.amazonaws.com/kaggle-lego/lego-database.zip&quot;
 tmp &lt;- tempfile()
 download.file(URL, tmp)
@@ -46,7 +46,7 @@ files &lt;- unzip(tmp)</code></pre>
 </div>
 <div id="check-out-the-data" class="section level2">
 <h2>Check out the data</h2>
-<p>Now we should have the csv files unzipped and the file names in <code>files</code>. If you look at the files you’ll see it includes 8 csv files and one image named <code>downloads_schema.png</code>. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won’t be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.</p>
+<p>Now we should have the CSV files unzipped and the file names in <code>files</code>. If you look at the files you’ll see it includes 8 CSV files and one image named <code>downloads_schema.png</code>. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won’t be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.</p>
 <p>For now we remove it from the <code>files</code> list and grab the filenames for later use. If you have not used the pipe function <code>%&gt;%</code>, imported by <code>dplyr</code>, it sends output from the left-hand function to the next function and the <code>.</code> is a placeholder argument representing that output.</p>
 <pre class="r"><code># Check files names
 files 
@@ -74,7 +74,7 @@ out &lt;- lapply(files, count_rows)
 </div>
 <div id="make-the-database" class="section level2">
 <h2>Make the database</h2>
-<p>Now we have checked out all the ingredients ready can create our database. You’ll need a working installation of PostgreSQL and the username and password for an account. The following <code>db</code> functions are from the <code>RPostgreSQL</code>(and <code>DBI</code>) package.</p>
+<p>Now we have checked out all the ingredients ready can create our database. You’ll need a working installation of Postgres and the username and password for an account. The following <code>db</code> functions are from the <code>RPostgreSQL</code>(and <code>DBI</code>) package.</p>
 <p>In this example, we’ll use your password as plain text in the script. This isn’t the best practice and I give an alternative below.</p>
 <p>First, we identify the database driver we’ll be using and setup the connection, <code>con</code>, which we can use both create and query the database. To use another database, only the first line would need to be changed. If you already had SQLite installed, for example, just load the <code>RSQLite</code> packages and call the analagous function to retrieve the SQLite driver. The remaining DBI calls should work, give or take variations in SQL syntax.</p>
 <pre class="r"><code># Access Postgres driver 
@@ -86,7 +86,7 @@ con = DBI::dbConnect(pg,
                      host = &quot;localhost&quot;, 
                      port = 5432
                      )</code></pre>
-<p>If all has gone well we now have a connection to the Postgres and can create our database. With the <code>dbSendQuery</code> command we use any standard PostgreSQL command. We create the database with “create database legos”. and then test use the <code>dbReadTable</code> to create tables. For each csv file, we create a single table using the <code>filenames</code> we created earlier.</p>
+<p>If all has gone well we now have a connection to the Postgres and can create our database. With the <code>dbSendQuery</code> command we use any standard PostgreSQL command. We create the database with “create database legos”. and then test use the <code>dbReadTable</code> to create tables. For each CSV file, we create a single table using the <code>filenames</code> we created earlier.</p>
 <pre class="r"><code>DBI::dbSendQuery(con, &quot;create database legos&quot;)
 # Test writing one file to the database
 colors &lt;- readr::read_csv(files[1])
@@ -171,7 +171,7 @@ head(rgb_df)
 rgb_df %&gt;% dplyr::filter(is_trans == &quot;t&quot;) %&gt;% dplyr::count()
 # And rgb + alpha column
 rgb_df &lt;- rgb_df %&gt;% dplyr::mutate(rgbt = ifelse(is_trans ==  &quot;f&quot;, rgb,adjustcolor(rgb, 0.5)))</code></pre>
-<p>Now we plot the results. The <code>sort</code> function orders the hex values alphanumerically, which isn’t a perfect color sorting but it’s not too bad either. The second version of the plot breaks the colors into two plots to make</p>
+<p>Now we plot the results. The <code>sort</code> function orders the hex values alphanumerically, which isn’t a perfect color sorting but it’s not too bad either.</p>
 <pre class="r"><code>par(bg = &quot;gray10&quot;, mar = c(2,1,2,1))
 barplot(
         height = rep(0.5, nrow(rgb_df)), 
@@ -181,7 +181,7 @@ barplot(
         space = 0
         )</code></pre>
 <p><img src="/post/lego-sql-part1_files/figure-html/unnamed-chunk-2-1.png" width="624" style="display: block; margin: auto;" /></p>
-<p>Cool, although it’s hard to tell what affect transparency has. But what if plot them all with a little more area? We define the function <code>draw_lego</code> to draw the single rectangle</p>
+<p>Cool, although it’s hard to tell what affect transparency has. Perhaps ploting the colors with a larger area will help identify the transparent tiles. We could also fiddle with the alpha value that’s passed to the <code>adjustcolor()</code> function. We’ll draw each color in a separate plot defined by the <code>draw_lego</code> function and adjust <code>par</code> to plot all 135 entries. This is good old-fashioned base R plotting.</p>
 <pre class="r"><code># Draw a single square
 draw_lego &lt;- function(col){
   plot(5,5, type = &quot;n&quot;, axes = FALSE)
@@ -204,7 +204,7 @@ par(mfrow = c(9, 15), mar = c(0.7, 0.7, 1, 0.7))
 cols &lt;- sort(rgb_df$rgbt)
 for(k in 1:length(cols))  draw_lego(cols[k])</code></pre>
 <p><img src="/post/lego-sql-part1_files/figure-html/squares-1.png" width="624" style="display: block; margin: auto;" /></p>
-<p>Maybe a little corny, but good enough for now.</p>
+<p>Maybe it’s a little cheesy, maybe you like it that way, in any case, it’s good enough for a quick view of the colors.</p>
 <p>In the follow-up post, I’ll go over using <code>dplyr</code> to query, filter, and transform data from our lego database. In order to explore the data in more detail, we’ll also need to do some basic joins.</p>
 <p>Finally, for this session, we need to clean up the open connection and reset the warnings option.</p>
 <pre class="r"><code>DBI::dbDisconnect(con)

@@ -41,7 +41,7 @@ Before getting started install [postgreSQL](https://www.postgresql.org/download/
 
 ## Setup and download
 
-In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was has an enhanced method for reading csv files. Throughout the code I will be using the '::' operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using `library()` or `require()`, and it makes explicit what package individual functions come from. The exception is the pipe operator "%>%", which I use the `import` package to make available to the current session.
+In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was has an enhanced method for reading CSV files. Throughout the code I will be using the '::' operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using `library()` or `require()`, and it makes explicit what package individual functions come from. The exception is the pipe operator "%>%", which I use the `import` package to make available to the current session.
 
 ```{r libraries }
 # install.packages("dplyr")
@@ -59,7 +59,7 @@ setwd("~/path/to/my/lego-project")
 # Supress warnings for this session
 options(warn=-1)
 ```
-We'll download the zip to a temporary file and save the csv files to the data directory.
+We'll download the zip to a temporary file and save the CSV files to the data directory.
 
 ```{r download  }
 URL <- "https://s3-us-west-1.amazonaws.com/kaggle-lego/lego-database.zip"
@@ -72,7 +72,7 @@ files <- unzip(tmp)
 ```
 ## Check out the data
 
-Now we should have the csv files unzipped and the file names in `files`. If you look at the files you'll see it includes 8 csv files and one image named `downloads_schema.png`. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won't be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.
+Now we should have the CSV files unzipped and the file names in `files`. If you look at the files you'll see it includes 8 CSV files and one image named `downloads_schema.png`. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won't be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.
 
 For now we remove it from the `files` list and grab the filenames for later use. If you have not used the pipe function `%>%`, imported by `dplyr`, it sends output from the left-hand function to the next function and the `.` is a placeholder argument representing that output.
 
@@ -110,7 +110,7 @@ At this point, we have an overview of the data types and size of each file. The 
 
 ## Make the database
 
-Now we have checked out all the ingredients ready can create our database. You'll need a working installation of PostgreSQL and the username and password for an account. The following `db` functions are from the `RPostgreSQL`(and `DBI`) package. 
+Now we have checked out all the ingredients ready can create our database. You'll need a working installation of Postgres and the username and password for an account. The following `db` functions are from the `RPostgreSQL`(and `DBI`) package. 
 
 In this example, we'll use your password as plain text in the script. This isn't the best practice and I give an alternative below. 
 
@@ -128,7 +128,7 @@ con = DBI::dbConnect(pg,
                      )
 
 ```
-If all has gone well we now have a connection to the Postgres and can create our database. With the `dbSendQuery` command we use any standard PostgreSQL command. We create the database with "create database legos". and then test use the `dbReadTable` to create tables. For each csv file, we create a single table using the `filenames` we created earlier.
+If all has gone well we now have a connection to the Postgres and can create our database. With the `dbSendQuery` command we use any standard PostgreSQL command. We create the database with "create database legos". and then test use the `dbReadTable` to create tables. For each CSV file, we create a single table using the `filenames` we created earlier.
 
 
 ```{r create-db  }
@@ -252,7 +252,7 @@ rgb_df %>% dplyr::filter(is_trans == "t") %>% dplyr::count()
 # And rgb + alpha column
 rgb_df <- rgb_df %>% dplyr::mutate(rgbt = ifelse(is_trans ==  "f", rgb,adjustcolor(rgb, 0.5)))
 ```
-Now we plot the results. The `sort` function orders the hex values alphanumerically, which isn't a perfect color sorting but it's not too bad either. The second version of the plot breaks the colors into two plots to make
+Now we plot the results. The `sort` function orders the hex values alphanumerically, which isn't a perfect color sorting but it's not too bad either. 
 
 ```{r  eval = TRUE}
 par(bg = "gray10", mar = c(2,1,2,1))
@@ -265,7 +265,7 @@ barplot(
         )
 ```
 
-Cool, although it's hard to tell what affect transparency has. But what if plot them all with a little more area? We define the function `draw_lego` to draw the single rectangle 
+Cool, although it's hard to tell what affect transparency has. Perhaps ploting the colors with a larger area will help identify the transparent tiles. We could also fiddle with the alpha value that's passed to the `adjustcolor()` function. We'll draw each color in a separate plot defined by the `draw_lego` function and adjust `par` to plot all 135 entries. This is good old-fashioned base R plotting.
 
 ```{r squares, eval = TRUE}
 # Draw a single square
@@ -291,7 +291,7 @@ cols <- sort(rgb_df$rgbt)
 for(k in 1:length(cols))  draw_lego(cols[k])
 ```
 
-Maybe a little corny, but good enough for now. 
+Maybe it's a little cheesy, maybe you like it that way, in any case, it's good enough for a quick view of the colors.  
 
 In the follow-up post, I'll go over using `dplyr` to query, filter, and transform data from our lego database. In order to explore the data in more detail, we'll also need to do some basic joins. 
 
