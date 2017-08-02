@@ -8,30 +8,31 @@ tags: ["R", "SQL", "eda"]
 
 
 
-<p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it means you can avoid loading a full dataset into memory. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
-<p>The main goal of this and a planned follow-up tutorial is to introduce several packages useful for handling SQL databases in R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package. The <code>RPostgreSQL</code> package is one of several packages that use the standardized interface to relational databases provided by the <code>DBI</code> package. This means that, aside from setting up the initial connection to the database, the code here could be used with another database for which the <code>DBI</code> interface has been implemented. For example, the <code>RMySQL</code> and <code>RSQLite</code> are available for the SQLite and MySQL databases.</p>
-<p>In part two we use the data manipulation verbs provided by the <code>dplyr</code> package to query and transform the data. The <code>dplyr</code> package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands. RStudio has a nice overview of database related packages <a href="https://db.rstudio.com/">here</a>.</p>
-<p>For the most part, everything will be done from within R and commands the code should run on any R installation. The major exception is the initial installation of a Postgres database, but I will point to resources for installing and setting up a user in Postgres. There are two other small exceptions and I’ll point this out as they come up. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful.</p>
+<p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it allows to manipulate and query data without loading the full dataset into memory. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
+<p>The main goal of the and a planned follow-up tutorial is to introduce several packages useful for interfacing with relational databases from R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package. The <code>RPostgreSQL</code> package is one of several packages that use the standardized interface provided by the <code>DBI</code> package. Aside from setting up the initial connection to the database, the code here could be used with another database for which the <code>DBI</code> interface has been implemented. For example, the <code>RMySQL</code> and <code>RSQLite</code> are available for the SQLite and MySQL databases.</p>
+<p>In part two we use the data manipulation verbs provided by the <code>dplyr</code> package to query and transform the data. The <code>dplyr</code> package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands.</p>
+<p>For the most part, everything will be done from within R the code should run on any R installation. The major exception is the initial installation of Postgres, but I will point to resources for the install step. There are two other small exceptions and I’ll point this out as they come up – in those cases, if you run into any trouble the steps can either be skipped or done manually outside of R. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful.</p>
 <p>The lego dataset can be downloaded manually from <a href="https://www.kaggle.com/rtatman/lego-database">Kaggle</a> with an account. I have mirrored the dataset on S3 to simplify the download step.</p>
-<p>Before getting started install <a href="https://www.postgresql.org/download/">postgreSQL</a>. See the <a href="https://wiki.postgresql.org/wiki/Detailed_installation_guides">installation page</a> for more detailed instruction and there are more <a href="http://www.postgresqltutorial.com/">tutorials here</a>. Once installed you should have a <strong>user</strong> and <strong>password</strong> with which you can set up a database.</p>
+<p>Before getting started install <a href="https://www.postgresql.org/download/">postgreSQL</a>. See the <a href="https://wiki.postgresql.org/wiki/Detailed_installation_guides">installation page</a> for more detailed instruction and there are more <a href="http://www.postgresqltutorial.com/">tutorials here</a>. Once installed you should have a <strong>user</strong> and <strong>password</strong> with give you permissions to create a Postgres database.</p>
 <div id="related-tutorials" class="section level3">
 <h3>Related Tutorials</h3>
 <ul>
 <li><p><a href="http://www.datacarpentry.org/R-ecology-lesson/05-r-and-databases.html">This Data Carpentry</a> tutorial gives an introduction to using <code>dplyr</code> with SQLite and jumps directly into using <code>dplyr</code> syntax.</p></li>
 <li><p><a href="https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Interacting-with-databases-from-Shiny">This UseR2017 talk</a> by Barbara Borge Ribeiro give a quick overview of programmatically accessing relational databases from R</p></li>
 <li><p>Software Carpentry has a introductory tutorial for using databases and SQL which includes lessons for Python and R <a href="https://swcarpentry.github.io/sql-novice-survey/">here</a>.</p></li>
+<li><p>RStudio has a nice overview of database related packages <a href="https://db.rstudio.com/">here</a>.</p></li>
 </ul>
 </div>
 <div id="setup-and-download" class="section level2">
 <h2>Setup and download</h2>
-<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading CSV files. Throughout the code I will be using the ‘::’ operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator “%&gt;%”, which I use the <code>import</code> package to make available to the current session.</p>
+<p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading CSV files. Throughout the code I will be using the <code>::</code> operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator <code>%&gt;%</code> which I use the <code>import</code> package to make available to the current session.</p>
 <pre class="r"><code># install.packages(&quot;dplyr&quot;)
 # install.packages(&quot;RPostgreSQL&quot;)
 # install.packags(&quot;readr&quot;)
 # install.packages(&quot;import&quot;) 
 # Make pipe available -- added to &quot;imports&quot; environment
 import::from(dplyr, &quot;%&gt;%&quot;)</code></pre>
-<p>First, we need to create a project directory – I’ll be calling it ‘lego-project’ – and set your current directory to that folder. There are a lot of unhelpful warnings so I’m suppressing those for the session by setting the option <code>options(warn=-1)</code>.</p>
+<p>First, we need to create a project directory – I’ll be calling it ‘lego-project’ – and set your current directory to that folder. There are a lot of unhelpful warnings so I’m suppressing those for the session by setting the option <code>options(warn=-1)</code>. You can skip this line if you’d like to see all the warnings.</p>
 <pre class="r"><code>setwd(&quot;~/path/to/my/lego-project&quot;)
 # Supress warnings for this session
 options(warn=-1)</code></pre>
@@ -47,7 +48,7 @@ files &lt;- unzip(tmp)</code></pre>
 <div id="check-out-the-data" class="section level2">
 <h2>Check out the data</h2>
 <p>Now we should have the CSV files unzipped and the file names in <code>files</code>. If you look at the files you’ll see it includes 8 CSV files and one image named <code>downloads_schema.png</code>. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won’t be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.</p>
-<p>For now we remove it from the <code>files</code> list and grab the filenames for later use. If you have not used the pipe function <code>%&gt;%</code>, imported by <code>dplyr</code>, it sends output from the left-hand function to the next function and the <code>.</code> is a placeholder argument representing that output.</p>
+<p>For now we remove it from the <code>files</code> list and grab the filenames for later use. If you have not used the pipe function <code>%&gt;%</code>, imported from <code>dplyr</code>, it sends output from the left-hand function to the right-hand function. The <code>.</code> is a placeholder argument representing the values output by the left-hand function.</p>
 <pre class="r"><code># Check files names
 files 
 # Remove db schema &#39;.png&#39; file
@@ -59,7 +60,7 @@ filenames &lt;- files %&gt;% sub(&quot;./&quot;, &quot;&quot;, .) %&gt;% sub(&qu
 readr::read_csv(files[1], n_max = 5)
 # Look at heads of all files
 lapply(files, readr::read_csv, n_max = 5)</code></pre>
-<p>For a larger dataset, it might also be useful to check the number of rows of data. I’m going to use the <code>system</code> function to make a call to <code>wc</code>. This is system dependent but should work on Linux or macOS and is an efficient way to get the newline count of a file. I’ll turn this into a function so we can use lapply to iterate over the files. (I’ve commented out a similar function for Windows but I haven’t tested that function.)</p>
+<p>For a larger dataset, it might also be useful to check the number of rows of data. I’m going to use the <code>system</code> function to make a call to <code>wc</code>. The <code>system</code> function allows you to pass command line function to the operating system, so it is OS dependent. These commands should work on Linux or macOS and is an efficient way to get the newline count of a file. I’ll turn this into a function so we can use lapply to iterate over the files. (I’ve commented out a similar function for Windows but I haven’t tested that function.)</p>
 <pre><code># For Linux/Unix or Mac
 count_rows &lt;- function(filename){
   system(paste(&quot;wc -l&quot;, filename))
@@ -72,8 +73,8 @@ out &lt;- lapply(files, count_rows)
 </code></pre>
 <p>At this point, we have an overview of the data types and size of each file. The data are either integers or strings. One possibility would be to update, for example, the <code>is_trans</code> field in colors to be a boolean or logical data type. To keep it simple we will be importing the data types as is.</p>
 </div>
-<div id="make-the-database" class="section level2">
-<h2>Make the database</h2>
+<div id="create-the-database" class="section level2">
+<h2>Create the database</h2>
 <p>Now we have checked out all the ingredients ready can create our database. You’ll need a working installation of Postgres and the username and password for an account. The following <code>db</code> functions are from the <code>RPostgreSQL</code>(and <code>DBI</code>) package.</p>
 <p>In this example, we’ll use your password as plain text in the script. This isn’t the best practice and I give an alternative below.</p>
 <p>First, we identify the database driver we’ll be using and setup the connection, <code>con</code>, which we can use both create and query the database. To use another database, only the first line would need to be changed. If you already had SQLite installed, for example, just load the <code>RSQLite</code> packages and call the analagous function to retrieve the SQLite driver. The remaining DBI calls should work, give or take variations in SQL syntax.</p>
@@ -110,8 +111,8 @@ DBI::dbDisconnect(con)</code></pre>
 <div id="interlude-password-encryption-with-keyringr" class="section level2">
 <h2>Interlude: Password encryption with <code>keyringr</code></h2>
 <p>(If you start a new session you can pick up again here. If continuing with the previous analysis, you can skip the code in this section and still run the rest of the tutorial.)</p>
-<p>There is a nice alternative to using plain text passwords in scripts. The <code>keyringr</code> package lets you encrypt your passwords locally and call those passwords from a script. The package provides three separate functions for doing this and which you should use depends on your operating system. I will use the Linux function below. See <a href="https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html">the instructions here</a> for a quick guide to the other functions.</p>
-<p>We disconnected previously and I assume that we are reconnecting to the database with a fresh R session.</p>
+<p>There is a nice alternative to using plain text passwords in scripts. The <code>keyringr</code> package lets you encrypt your passwords locally and call those passwords from a script. The package provides three separate functions for doing this and which you should use depends on your operating system. I will use the Linux function below. See <a href="https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html">the instructions here</a> for a quick guide to the package and the function calls for different operating systems.</p>
+<p>If you have started a new session you can resume at this point. In the code below I assume that we have created the database and reconnecting to the database with a fresh R session.</p>
 <p>For the <code>password</code> argument passed to the <code>dbConnect</code> function below, you will need to replace <code>keyringr::decrypt_gk_pw(&quot;db lego user myusername&quot;)</code> with the <code>keyringr</code> decryption function that’s appropriate for your operating system. Also, you need to replace the key-value pairs, here <code>db lego</code> and <code>user myusername</code> with those passed you used to set up your encrypted password.</p>
 <pre class="r"><code># If restarting, re-set the directory to data
 setwd(&quot;~/path/to/my/lego-project&quot;)
@@ -164,13 +165,13 @@ DBI::dbClearResult(res)
 # Check data
 dim(rgb_df)
 head(rgb_df)</code></pre>
-<p>The data columns have the data type character. The <code>rgb</code> colors are in hexadecimal which R can read fine. The values, however, don’t reflect the transparency. We use two <code>dplyr</code> verbs to count the number of transparent colors. In the next line, we add a column with the color adjusted for transparency. The <code>ifelse</code> statement sets the new column, named <code>rgbt</code>, to the straight <code>rgb</code> value if <code>is_trans</code> is false, otherwise, it adds an alpha value determined by the <code>adjustcolor</code> function.</p>
+<p>Both columns are of type ‘character’. The <code>rgb</code> colors are in hexadecimal and R will read string hexadecimals as colors. The values, however, don’t reflect the transparency. We use <code>dplyr</code> functions to <code>filter</code> rows with transparent colors and <code>count</code> to get the total number of rows returned by the previous step. In the next line, we add a column with the color adjusted for transparency. The <code>ifelse</code> statement sets the new column, named <code>rgbt</code>, to the straight <code>rgb</code> value if <code>is_trans</code> is false, otherwise, it adds an alpha value determined by the <code>adjustcolor</code> function.</p>
 <pre class="r"><code>rgb_df$rgb &lt;- paste0(&quot;#&quot;, rgb_df$rgb) 
 head(rgb_df)
 # Count number of transparent colors
 rgb_df %&gt;% dplyr::filter(is_trans == &quot;t&quot;) %&gt;% dplyr::count()
 # And rgb + alpha column
-rgb_df &lt;- rgb_df %&gt;% dplyr::mutate(rgbt = ifelse(is_trans ==  &quot;f&quot;, rgb,adjustcolor(rgb, 0.5)))</code></pre>
+rgb_df &lt;- rgb_df %&gt;% dplyr::mutate(rgbt = ifelse  (is_trans ==  &quot;f&quot;, rgb,adjustcolor(rgb, 0.5)))</code></pre>
 <p>Now we plot the results. The <code>sort</code> function orders the hex values alphanumerically, which isn’t a perfect color sorting but it’s not too bad either.</p>
 <pre class="r"><code>par(bg = &quot;gray10&quot;, mar = c(2,1,2,1))
 barplot(
@@ -204,7 +205,7 @@ par(mfrow = c(9, 15), mar = c(0.7, 0.7, 1, 0.7))
 cols &lt;- sort(rgb_df$rgbt)
 for(k in 1:length(cols))  draw_lego(cols[k])</code></pre>
 <p><img src="/post/lego-sql-part1_files/figure-html/squares-1.png" width="624" style="display: block; margin: auto;" /></p>
-<p>Maybe it’s a little cheesy, maybe you like it that way, in any case, it’s good enough for a quick view of the colors.</p>
+<p>Maybe it’s a little corny, maybe you like corny; In any case, it’s good enough for a quick view of the colors.</p>
 <p>In the follow-up post, I’ll go over using <code>dplyr</code> to query, filter, and transform data from our lego database. In order to explore the data in more detail, we’ll also need to do some basic joins.</p>
 <p>Finally, for this session, we need to clean up the open connection and reset the warnings option.</p>
 <pre class="r"><code>DBI::dbDisconnect(con)
