@@ -19,17 +19,17 @@ knitr::opts_chunk$set(
        eval = FALSE)
 ```
 
-There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it means you can avoid loading a full dataset into memory. In this tutorial, we will be using the [lego dataset](https://www.kaggle.com/rtatman/lego-database). It's moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and [normalized](https://en.wikipedia.org/wiki/Database_normalization). This means we can focus on creating and querying the database.
+There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it allows to manipulate and query data without loading the full dataset into memory. In this tutorial, we will be using the [lego dataset](https://www.kaggle.com/rtatman/lego-database). It's moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and [normalized](https://en.wikipedia.org/wiki/Database_normalization). This means we can focus on creating and querying the database.
 
-The main goal of this and a planned follow-up tutorial is to introduce several packages useful for handling SQL databases in R. In this tutorial, we will walk through setting up a Postgres database with the `RPostgreSQL` package. The `RPostgreSQL` package is one of several packages that use the standardized interface to relational databases provided by the `DBI` package. This means that, aside from setting up the initial connection to the database, the code here could be used with another database for which the `DBI` interface has been implemented. For example, the `RMySQL` and `RSQLite` are available for the SQLite and MySQL databases. 
+The main goal of the and a planned follow-up tutorial is to introduce several packages useful for interfacing with relational databases from R. In this tutorial, we will walk through setting up a Postgres database with the `RPostgreSQL` package. The `RPostgreSQL` package is one of several packages that use the standardized interface provided by the `DBI` package. Aside from setting up the initial connection to the database, the code here could be used with another database for which the `DBI` interface has been implemented. For example, the `RMySQL` and `RSQLite` are available for the SQLite and MySQL databases. 
 
-In part two we use the data manipulation verbs provided by the `dplyr` package to query and transform the data. The `dplyr` package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands. RStudio has a nice overview of database related packages [here](https://db.rstudio.com/). 
+In part two we use the data manipulation verbs provided by the `dplyr` package to query and transform the data. The `dplyr` package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands. 
 
-For the most part, everything will be done from within R and commands the code should run on any R installation. The major exception is the initial installation of a Postgres database, but I will point to resources for installing and setting up a user in Postgres. There are two other small exceptions and I'll point this out as they come up. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful. 
+For the most part, everything will be done from within R the code should run on any R installation. The major exception is the initial installation of Postgres, but I will point to resources for the install step. There are two other small exceptions and I'll point this out as they come up -- in those cases, if you run into any trouble the steps can either be skipped or done manually outside of R. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful. 
 
 The lego dataset can be downloaded manually from [Kaggle](https://www.kaggle.com/rtatman/lego-database) with an account. I have mirrored the dataset on S3 to simplify the download step. 
 
-Before getting started install [postgreSQL](https://www.postgresql.org/download/). See the [installation page](https://wiki.postgresql.org/wiki/Detailed_installation_guides) for more detailed instruction and there are more [tutorials here](http://www.postgresqltutorial.com/). Once installed you should have a **user** and **password** with which you can set up a database.
+Before getting started install [postgreSQL](https://www.postgresql.org/download/). See the [installation page](https://wiki.postgresql.org/wiki/Detailed_installation_guides) for more detailed instruction and there are more [tutorials here](http://www.postgresqltutorial.com/). Once installed you should have a **user** and **password** with give you permissions to create a Postgres database.
 
 ### Related Tutorials 
 
@@ -39,9 +39,11 @@ Before getting started install [postgreSQL](https://www.postgresql.org/download/
 
 * Software Carpentry has a introductory tutorial for using databases and SQL which includes lessons for Python and R [here](https://swcarpentry.github.io/sql-novice-survey/). 
 
+* RStudio has a nice overview of database related packages [here](https://db.rstudio.com/). 
+
 ## Setup and download
 
-In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was has an enhanced method for reading CSV files. Throughout the code I will be using the '::' operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using `library()` or `require()`, and it makes explicit what package individual functions come from. The exception is the pipe operator "%>%", which I use the `import` package to make available to the current session.
+In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was has an enhanced method for reading CSV files. Throughout the code I will be using the `::` operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using `library()` or `require()`, and it makes explicit what package individual functions come from. The exception is the pipe operator `%>%` which I use the `import` package to make available to the current session.
 
 ```{r libraries }
 # install.packages("dplyr")
@@ -52,7 +54,7 @@ In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was ha
 import::from(dplyr, "%>%")
 ```
 
-First, we need to create a project directory -- I'll be calling it 'lego-project' -- and set your current directory to that folder. There are a lot of unhelpful warnings so I'm suppressing those for the session by setting the option `options(warn=-1)`.
+First, we need to create a project directory -- I'll be calling it 'lego-project' -- and set your current directory to that folder. There are a lot of unhelpful warnings so I'm suppressing those for the session by setting the option `options(warn=-1)`. You can skip this line if you'd like to see all the warnings.
 
 ```{r setup  }
 setwd("~/path/to/my/lego-project")
@@ -74,7 +76,7 @@ files <- unzip(tmp)
 
 Now we should have the CSV files unzipped and the file names in `files`. If you look at the files you'll see it includes 8 CSV files and one image named `downloads_schema.png`. This contains the schema for the database the files came from. This details primary and foreign keys and constraints which we won't be using here. The schema will come in handy in the next tutorial, however, when we need to join data from multiple tables.
 
-For now we remove it from the `files` list and grab the filenames for later use. If you have not used the pipe function `%>%`, imported by `dplyr`, it sends output from the left-hand function to the next function and the `.` is a placeholder argument representing that output.
+For now we remove it from the `files` list and grab the filenames for later use. If you have not used the pipe function `%>%`, imported from `dplyr`, it sends output from the left-hand function to the right-hand  function. The `.` is a placeholder argument representing the values output by the left-hand function.
 
 ```{r check-files }
 # Check files names
@@ -93,7 +95,7 @@ readr::read_csv(files[1], n_max = 5)
 # Look at heads of all files
 lapply(files, readr::read_csv, n_max = 5)
 ```
-For a larger dataset, it might also be useful to check the number of rows of data. I'm going to use the `system` function to make a call to `wc`. This is system dependent but should work on Linux or macOS and is an efficient way to get the newline count of a file. I'll turn this into a function so we can use lapply to iterate over the files. (I've commented out a similar function for Windows but I haven't tested that function.)
+For a larger dataset, it might also be useful to check the number of rows of data. I'm going to use the `system` function to make a call to `wc`. The `system` function allows you to pass command line function to the operating system, so it is OS dependent. These commands should work on Linux or macOS and is an efficient way to get the newline count of a file. I'll turn this into a function so we can use lapply to iterate over the files. (I've commented out a similar function for Windows but I haven't tested that function.) 
 ```
 # For Linux/Unix or Mac
 count_rows <- function(filename){
@@ -108,7 +110,7 @@ out <- lapply(files, count_rows)
 ```
 At this point, we have an overview of the data types and size of each file. The data are either integers or strings. One possibility would be to update, for example, the `is_trans` field in colors to be a boolean or logical data type. To keep it simple we will be importing the data types as is. 
 
-## Make the database
+## Create the database
 
 Now we have checked out all the ingredients ready can create our database. You'll need a working installation of Postgres and the username and password for an account. The following `db` functions are from the `RPostgreSQL`(and `DBI`) package. 
 
@@ -158,9 +160,9 @@ At this point, our database has been created and we're ready to do some analyses
 
 (If you start a new session you can pick up again here. If continuing with the previous analysis, you can skip the code in this section and still run the rest of the tutorial.)
 
-There is a nice alternative to using plain text passwords in scripts. The `keyringr` package lets you encrypt your passwords locally and call those passwords from a script. The package provides three separate functions for doing this and which you should use depends on your operating system. I will use the Linux function below. See [the instructions here](https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html) for a quick guide to the other functions. 
+There is a nice alternative to using plain text passwords in scripts. The `keyringr` package lets you encrypt your passwords locally and call those passwords from a script. The package provides three separate functions for doing this and which you should use depends on your operating system. I will use the Linux function below. See [the instructions here](https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html) for a quick guide to the package and the function calls for different operating systems. 
 
-We disconnected previously and I assume that we are reconnecting to the database with a fresh R session. 
+If you have started a new session you can resume at this point. In the code below I assume that we have created the database and reconnecting to the database with a fresh R session. 
 
 For the `password` argument passed to the `dbConnect` function below, you will need to replace `keyringr::decrypt_gk_pw("db lego user myusername")` with the `keyringr` decryption function that's appropriate for your operating system. Also, you need to replace the key-value pairs, here `db lego` and `user myusername` with those passed you used to set up your encrypted password.
 ```{r reconnect}
@@ -241,7 +243,7 @@ DBI::dbClearResult(res)
 dim(rgb_df)
 head(rgb_df)
 ```
-The data columns have the data type character. The `rgb` colors are in hexadecimal which R can read fine. The values, however, don't reflect the transparency. We use two `dplyr` verbs to count the number of transparent colors. In the next line, we add a column with the color adjusted for transparency. The `ifelse` statement sets the new column, named `rgbt`, to the straight `rgb` value if `is_trans` is false, otherwise, it adds an alpha value determined by the `adjustcolor` function.
+Both columns are of type 'character'. The `rgb` colors are in hexadecimal and R will read string hexadecimals as colors. The values, however, don't reflect the transparency. We use `dplyr` functions to `filter` rows with transparent colors and `count` to get the total number of rows returned by the previous step. In the next line, we add a column with the color adjusted for transparency. The `ifelse` statement sets the new column, named `rgbt`, to the straight `rgb` value if `is_trans` is false, otherwise, it adds an alpha value determined by the `adjustcolor` function.
 
 
 ```{r transform , eval = TRUE}
@@ -250,7 +252,7 @@ head(rgb_df)
 # Count number of transparent colors
 rgb_df %>% dplyr::filter(is_trans == "t") %>% dplyr::count()
 # And rgb + alpha column
-rgb_df <- rgb_df %>% dplyr::mutate(rgbt = ifelse(is_trans ==  "f", rgb,adjustcolor(rgb, 0.5)))
+rgb_df <- rgb_df %>% dplyr::mutate(rgbt = ifelse  (is_trans ==  "f", rgb,adjustcolor(rgb, 0.5)))
 ```
 Now we plot the results. The `sort` function orders the hex values alphanumerically, which isn't a perfect color sorting but it's not too bad either. 
 
@@ -291,7 +293,7 @@ cols <- sort(rgb_df$rgbt)
 for(k in 1:length(cols))  draw_lego(cols[k])
 ```
 
-Maybe it's a little cheesy, maybe you like it that way, in any case, it's good enough for a quick view of the colors.  
+Maybe it's a little corny, maybe you like corny; In any case, it's good enough for a quick view of the colors.  
 
 In the follow-up post, I'll go over using `dplyr` to query, filter, and transform data from our lego database. In order to explore the data in more detail, we'll also need to do some basic joins. 
 
