@@ -149,7 +149,7 @@ body {
   position: relative;
 }
 #header{
-  background-color: #222;
+  background-color: #fff;
 }
 .logo {
   width: 94px;
@@ -163,7 +163,7 @@ body {
 }
 .logo-text {
   width: auto;
-  color: #eee;
+  color: #222;
   font-size: 28px;
   font-weight: 500;
   line-height: 57px;
@@ -296,7 +296,7 @@ a.article-title:hover,
 #header-outer {
   height: 100%;
   position: relative;
-  background-color: #222;
+  background-color: #fff;
 }
 #header-inner {
   position: relative;
@@ -310,7 +310,7 @@ a.article-title:hover,
 #main-nav-toggle,
 .search-form-submit {
   float: left;
-  color: #eee;
+  color: #222;
   text-decoration: none;
   -webkit-transition: opacity 0.2s;
   -moz-transition: opacity 0.2s;
@@ -334,7 +334,7 @@ a.article-title:hover,
   margin-left: -12px;
   margin-top:2px;
   font-family: FontAwesome;
-  color: #eee;
+  color: #222;
 }
 #main-nav-toggle:before {
   content: "\f0c9";
