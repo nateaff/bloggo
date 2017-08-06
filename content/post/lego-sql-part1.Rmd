@@ -193,7 +193,7 @@ A side note: The `dbSendQuery` function does not return data until we call the `
 ```{r echo=FALSE, eval = TRUE, results='hide',message=FALSE}
 # Hide re-load
 import::from(dplyr, "%>%")
-setwd("~/dev/R-proj/lego/data")
+setwd("~/devel/R-proj/lego/data")
 filenames <- dir() %>% sub(".csv", "", .)
 
 pg = RPostgreSQL::PostgreSQL()
