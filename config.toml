@@ -4,12 +4,15 @@ languageCode = "en-us"
 title = "Nathanael Aff"
 theme = "hugo-theme-minos"
 googleAnalytics = "UA-103620819-1"
-disqusShortname = "nateaff.disqus.com"
+disqusShortname = "nateaff-com"
 ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
 
+[[menu.main]]
+    name = "Projects"
+    url = "projects"
 [[menu.main]]
     name = "GitHub"
     url = "https://github.com/nateaff"
