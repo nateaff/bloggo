@@ -7,6 +7,8 @@ categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
 ---
 
+![](/img/lego-colors.png)
+
 ```{r global_options, echo=FALSE}
 knitr::opts_chunk$set(
        knitr::opts_chunk$set(cache=TRUE),
@@ -143,8 +145,10 @@ gp <-  years %>%  ggplot( ) + geom_bar(aes(x = year )) +
             legend.position = "none", 
             text = element_text(size = 13),
             plot.title = element_text(size = rel(1)),
-            plot.caption = element_text(color = "gray30", size = rel(0.6)),
-            axis.text.y = element_blank(), 
+            plot.caption = element_text(
+                             face = "italic",
+                             color = "gray30",
+                             size = rel(0.6)),
             panel.grid = element_blank()
             )
 gp
@@ -156,19 +160,18 @@ I'll be using the same basic bar plot for the remaining plots. To simplify, we c
 theme_light2 <- function(){
   theme_light( ) + 
     theme(
-      panel.background = element_rect(fill = "#fdfdfd"),
-      plot.background = element_rect(fill = "#fbfbfb"),
-      legend.position = "none", 
-      text = element_text(size = 13),
-      plot.title = element_text(size = rel(1)),
-      plot.caption = element_text(
-                      face = "italic", 
-                      color = "gray30", 
-                      size = rel(0.6)),
-      axis.text.y = element_blank(), 
-      panel.grid = element_blank()
-      )
-  }
+          panel.background = element_rect(fill = "#fdfdfd"),
+          plot.background = element_rect(fill = "#fdfdfd"),
+          legend.position = "none", 
+          text = element_text(size = 13),
+          plot.title = element_text(size = rel(1)),
+          plot.caption = element_text(
+                           face = "italic",
+                           color = "gray30",
+                           size = rel(0.6)),
+          panel.grid = element_blank()
+          )
+ }
 ```
 
 ### Database schema and joins

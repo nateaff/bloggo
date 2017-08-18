@@ -7,13 +7,15 @@ categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
 ---
 
+![](/img/lego-sqs.png)
+
 ```{r global_options, echo = FALSE}
 knitr::opts_chunk$set(
        knitr::opts_chunk$set(cache=TRUE),
        fig.align = 'center', 
        echo=TRUE, 
        warning=FALSE, 
-       message=FALSE, 
+       message=FALSE,
        results = "hide",
        fig.width = 6.5, 
        fig.height = 6.5,
