@@ -28,7 +28,7 @@ This, the middle-thirds [Cantor set](https://en.wikipedia.org/wiki/Cantor_set#Th
   
 While the origins of the term are interesting, it seems to also have added an unnecessary air of mystery to the idea of fractal dimension. In the this post I try to demonstrate that fractal dimension is a statistical property that relates to fundamental properties of the graph of a time series or random processes. In particular, fractal dimension can be described in terms of the autocorrelation function of a time series. Changes in fractal dimension can also be readily seen in the graphs of time series or random fields.
 
- (If you are interested in more mathematical details, this post is based on a nice and not too long [paper by Tilmann Gneiting]((https://arxiv.org/abs/physics/0109031).
+ (If you are interested in more mathematical details, this post is based on a nice and not too long [paper by Tilmann Gneiting](https://arxiv.org/abs/physics/0109031).
 
 ### Autocorrelation Function (ACF)
 

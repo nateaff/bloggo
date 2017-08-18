@@ -120,8 +120,10 @@ gp &lt;-  years %&gt;%  ggplot( ) + geom_bar(aes(x = year )) +
             legend.position = &quot;none&quot;, 
             text = element_text(size = 13),
             plot.title = element_text(size = rel(1)),
-            plot.caption = element_text(color = &quot;gray30&quot;, size = rel(0.6)),
-            axis.text.y = element_blank(), 
+            plot.caption = element_text(
+                             face = &quot;italic&quot;,
+                             color = &quot;gray30&quot;,
+                             size = rel(0.6)),
             panel.grid = element_blank()
             )
 gp</code></pre>
@@ -129,19 +131,18 @@ gp</code></pre>
 <pre class="r"><code>theme_light2 &lt;- function(){
   theme_light( ) + 
     theme(
-      panel.background = element_rect(fill = &quot;#fdfdfd&quot;),
-      plot.background = element_rect(fill = &quot;#fbfbfb&quot;),
-      legend.position = &quot;none&quot;, 
-      text = element_text(size = 13),
-      plot.title = element_text(size = rel(1)),
-      plot.caption = element_text(
-                      face = &quot;italic&quot;, 
-                      color = &quot;gray30&quot;, 
-                      size = rel(0.6)),
-      axis.text.y = element_blank(), 
-      panel.grid = element_blank()
-      )
-  }</code></pre>
+          panel.background = element_rect(fill = &quot;#fdfdfd&quot;),
+          plot.background = element_rect(fill = &quot;#fdfdfd&quot;),
+          legend.position = &quot;none&quot;, 
+          text = element_text(size = 13),
+          plot.title = element_text(size = rel(1)),
+          plot.caption = element_text(
+                           face = &quot;italic&quot;,
+                           color = &quot;gray30&quot;,
+                           size = rel(0.6)),
+          panel.grid = element_blank()
+          )
+ }</code></pre>
 <div id="database-schema-and-joins" class="section level3">
 <h3>Database schema and joins</h3>
 <p>To look at how the color of Lego bricks changed over time, we will need to combine data from the different tables. For example, if we want to look at the change in colors over time we’ll need data from multiple tables. The schema below is included in the Kaggle data set. The schema shows the foreign key constraints which we’ll use to join data from the multiple tables.</p>
