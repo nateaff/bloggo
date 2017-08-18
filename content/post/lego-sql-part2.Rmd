@@ -143,8 +143,13 @@ gp <-  years %>%  ggplot( ) + geom_bar(aes(x = year )) +
             panel.background = element_rect(fill = "#fdfdfd"),
             plot.background = element_rect(fill = "#fdfdfd"),
             legend.position = "none", 
-            text = element_text(size = 13),
-            plot.title = element_text(size = rel(1)),
+            text = element_text(
+                     color = "gray10", 
+                     face = "bold",
+                     family="Lato", 
+                     size = 13),
+            axis.title = element_text(size=rel(0.9)),
+            plot.title = element_text(face = "bold", size = rel(1.1)),
             plot.caption = element_text(
                              face = "italic",
                              color = "gray30",
@@ -162,13 +167,18 @@ theme_light2 <- function(){
     theme(
           panel.background = element_rect(fill = "#fdfdfd"),
           plot.background = element_rect(fill = "#fdfdfd"),
-          legend.position = "none", 
-          text = element_text(size = 13),
+          legend.position = "none",
+          text = element_text(
+                   color = "gray10", 
+                   face = "bold",
+                   family="Lato", 
+                   size = 13),
           plot.title = element_text(size = rel(1)),
+          axis.title = element_text(size=rel(0.9)),
           plot.caption = element_text(
                            face = "italic",
                            color = "gray30",
-                           size = rel(0.6)),
+                           size = rel(0.7)),
           panel.grid = element_blank()
           )
  }
@@ -236,17 +246,18 @@ set_colors <- set_colors %>% mutate(rgb = paste0("#", rgb))
 pal <- unique(set_colors$rgb)
 names(pal) <- unique(pal) 
 
-gp <-  set_colors %>%   ggplot( aes(x = year, fill = rgb)) + 
-          geom_bar() + 
+gp <-  set_colors %>%   ggplot() + 
+          geom_bar(aes(x = year, fill = rgb)) + 
           labs(
             x =   "", 
             y = "Brick Color Frequency", 
             title = "Lego brick colors, 1950-2017", 
-            caption = "source:rebrickable.com/api/"
-            )  +          
+            caption = "source: rebrickable.com/api/"
+            ) +          
           scale_fill_manual(values = pal) + 
           scale_x_discrete(limits = breaks) +          
           theme_light2() 
+
 gp
 ```
 
@@ -259,35 +270,36 @@ freq_tbl <- set_colors %>% select(year, rgb, color_id) %>%
               summarise(n = n()) %>% 
               mutate(percent = n/sum(n))
 # Plot color occurences only
-gp <-  freq_tbl %>%   ggplot( aes(x = year, fill = rgb)) + 
-          geom_bar() + 
+gp <-  freq_tbl %>%   ggplot() + 
+          geom_bar(aes(x = year, fill = rgb)) + 
           labs(
             x = "", 
-            y = "Unique Bricks per Year", 
+            y = "Unique Brick Colors", 
             title = "Lego brick colors, 1950-2017",
-            caption = "source:rebrickable.com/api/"           
+            caption = "source: rebrickable.com/api/"           
             )  +          
           scale_fill_manual(values = pal)+ 
           scale_x_discrete(limits = breaks) +          
           theme_light2()
+
 gp
 ```
 To plot relative color frequencies that we calculate above, we just add `y = percent` to the `geom_bar` aesthetics.
 
 ```{r plot-relative, eval=TRUE}
-gp <-  freq_tbl %>%   
-        ggplot( ) + 
+gp <-  freq_tbl %>% ggplot() + 
         geom_bar(
           aes(x = year, y = percent, fill = rgb), 
           stat  = "identity", 
           width = 1
-            ) +
-            labs(x = "", 
-            y = "Relative Color Frequency", 
-            title = "Lego brick colors, 1950-2017",
-            caption = "source:rebrickable.com/api") +
-          scale_fill_manual(values = pal) + 
+          ) +
+        labs(x = "", 
+          y = "Relative Color Frequency", 
+          title = "Lego brick colors, 1950-2017",
+          caption = "source: rebrickable.com/api") +
+        scale_fill_manual(values = pal) + 
         scale_x_discrete(limits = breaks) +          
         theme_light2()
+
 gp
 ```
