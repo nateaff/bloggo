@@ -8,6 +8,7 @@ tags: ["R", "Time Series"]
  
 ```{r global_options, echo = FALSE}
 knitr::opts_chunk$set(
+       knitr::opts_chunk$set(cache=TRUE),
        fig.align = 'center', 
        echo=TRUE, 
        warning=FALSE, 
