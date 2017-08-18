@@ -122,8 +122,13 @@ gp &lt;-  years %&gt;%  ggplot( ) + geom_bar(aes(x = year )) +
             panel.background = element_rect(fill = &quot;#fdfdfd&quot;),
             plot.background = element_rect(fill = &quot;#fdfdfd&quot;),
             legend.position = &quot;none&quot;, 
-            text = element_text(size = 13),
-            plot.title = element_text(size = rel(1)),
+            text = element_text(
+                     color = &quot;gray10&quot;, 
+                     face = &quot;bold&quot;,
+                     family=&quot;Lato&quot;, 
+                     size = 13),
+            axis.title = element_text(size=rel(0.9)),
+            plot.title = element_text(face = &quot;bold&quot;, size = rel(1.1)),
             plot.caption = element_text(
                              face = &quot;italic&quot;,
                              color = &quot;gray30&quot;,
@@ -137,13 +142,18 @@ gp</code></pre>
     theme(
           panel.background = element_rect(fill = &quot;#fdfdfd&quot;),
           plot.background = element_rect(fill = &quot;#fdfdfd&quot;),
-          legend.position = &quot;none&quot;, 
-          text = element_text(size = 13),
+          legend.position = &quot;none&quot;,
+          text = element_text(
+                   color = &quot;gray10&quot;, 
+                   face = &quot;bold&quot;,
+                   family=&quot;Lato&quot;, 
+                   size = 13),
           plot.title = element_text(size = rel(1)),
+          axis.title = element_text(size=rel(0.9)),
           plot.caption = element_text(
                            face = &quot;italic&quot;,
                            color = &quot;gray30&quot;,
-                           size = rel(0.6)),
+                           size = rel(0.7)),
           panel.grid = element_blank()
           )
  }</code></pre>
@@ -212,17 +222,18 @@ set_colors &lt;- set_colors %&gt;% mutate(rgb = paste0(&quot;#&quot;, rgb))
 pal &lt;- unique(set_colors$rgb)
 names(pal) &lt;- unique(pal) 
 
-gp &lt;-  set_colors %&gt;%   ggplot( aes(x = year, fill = rgb)) + 
-          geom_bar() + 
+gp &lt;-  set_colors %&gt;%   ggplot() + 
+          geom_bar(aes(x = year, fill = rgb)) + 
           labs(
             x =   &quot;&quot;, 
             y = &quot;Brick Color Frequency&quot;, 
             title = &quot;Lego brick colors, 1950-2017&quot;, 
-            caption = &quot;source:rebrickable.com/api/&quot;
-            )  +          
+            caption = &quot;source: rebrickable.com/api/&quot;
+            ) +          
           scale_fill_manual(values = pal) + 
           scale_x_discrete(limits = breaks) +          
           theme_light2() 
+
 gp</code></pre>
 <p><img src="/post/lego-sql-part2_files/figure-html/plot3-1.png" width="624" style="display: block; margin: auto;" /></p>
 <p>Finally, we can use <code>dplyr</code>’s <code>group_by</code> function count the number of times a color appears each year. We can use the same table to plot the occurrences of unique colors and the relative frequency of colors.</p>
@@ -232,33 +243,34 @@ freq_tbl &lt;- set_colors %&gt;% select(year, rgb, color_id) %&gt;%
               summarise(n = n()) %&gt;% 
               mutate(percent = n/sum(n))
 # Plot color occurences only
-gp &lt;-  freq_tbl %&gt;%   ggplot( aes(x = year, fill = rgb)) + 
-          geom_bar() + 
+gp &lt;-  freq_tbl %&gt;%   ggplot() + 
+          geom_bar(aes(x = year, fill = rgb)) + 
           labs(
             x = &quot;&quot;, 
-            y = &quot;Unique Bricks per Year&quot;, 
+            y = &quot;Unique Brick Colors&quot;, 
             title = &quot;Lego brick colors, 1950-2017&quot;,
-            caption = &quot;source:rebrickable.com/api/&quot;           
+            caption = &quot;source: rebrickable.com/api/&quot;           
             )  +          
           scale_fill_manual(values = pal)+ 
           scale_x_discrete(limits = breaks) +          
           theme_light2()
+
 gp</code></pre>
 <p><img src="/post/lego-sql-part2_files/figure-html/plot4-1.png" width="624" style="display: block; margin: auto;" /> To plot relative color frequencies that we calculate above, we just add <code>y = percent</code> to the <code>geom_bar</code> aesthetics.</p>
-<pre class="r"><code>gp &lt;-  freq_tbl %&gt;%   
-        ggplot( ) + 
+<pre class="r"><code>gp &lt;-  freq_tbl %&gt;% ggplot() + 
         geom_bar(
           aes(x = year, y = percent, fill = rgb), 
           stat  = &quot;identity&quot;, 
           width = 1
-            ) +
-            labs(x = &quot;&quot;, 
-            y = &quot;Relative Color Frequency&quot;, 
-            title = &quot;Lego brick colors, 1950-2017&quot;,
-            caption = &quot;source:rebrickable.com/api&quot;) +
-          scale_fill_manual(values = pal) + 
+          ) +
+        labs(x = &quot;&quot;, 
+          y = &quot;Relative Color Frequency&quot;, 
+          title = &quot;Lego brick colors, 1950-2017&quot;,
+          caption = &quot;source: rebrickable.com/api&quot;) +
+        scale_fill_manual(values = pal) + 
         scale_x_discrete(limits = breaks) +          
         theme_light2()
+
 gp</code></pre>
 <p><img src="/post/lego-sql-part2_files/figure-html/plot-relative-1.png" width="624" style="display: block; margin: auto;" /></p>
 </div>
