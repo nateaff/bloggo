@@ -15,7 +15,7 @@ draft: false
 
 Epsilon-complexity is time series or function feature which is meant to measure the intrinsic complexity of the time series. 
 
-For this thesis I implemented the epsilon-complexity estimation procedure in an `R` package. The classification performance of the epsilon-complexity coefficients was tested on a number of simulated time series. I also tested the properties of the complexity coefficients and found that, for the class of function tested, the feature behaves like a variogram estimator of fractal dimension. The complexity features was applied to the prediction of mouse seizures.  
+For this thesis I implemented the epsilon-complexity estimation procedure in an `R` package. The classification performance of the epsilon-complexity coefficients was tested on a number of simulated time series. I also tested the properties of the complexity coefficients and found that, for the class of functions tested, the feature behaves like a variogram estimator of fractal dimension. The complexity feature was applied to the prediction of mouse seizures.  
 
 <h4> Ecomplex </h4>
 
