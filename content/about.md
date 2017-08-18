@@ -1,5 +1,6 @@
 ---
 title: "About"
+draft: true
 ---
 
 Personal website of Nathanael Aff. 
