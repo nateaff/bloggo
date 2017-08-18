@@ -9,6 +9,10 @@ tags: ["R", "SQL", "eda"]
 
 
 
+<div class="figure">
+<img src="/img/lego-colors.png" />
+
+</div>
 <p>In the <a href="2017/07/25/exploring-lego-dataset-with-sql/">previous post</a> I went over using the <code>R</code> standardized relational database API, <code>DBI</code>, to create a database and build tables from the <a href="https://www.kaggle.com/rtatman/lego-database">Lego CSV files</a>. In this post we will be using the <code>dplyr</code> package to query and manipulate the data. I will walk through how <code>dplyr</code> handles calls database queries and then I will use a few simple queries and ggplot to visualize how color the change in Lego brick colors over the yeras. This tutorial assumes you have already created a ‘lego’ database, although most steps could be followed by loading the Lego CSV files to dataframes. It will be helpful if you have some familiarity with <code>ggplot</code> and the basic <code>dplyr</code> functions.</p>
 <p>In the <a href="2017/07/25/exploring-lego-dataset-with-sql/">last post</a> I went over querying a database using <code>dbGetQuery</code> and <code>dbSendQuery</code> functions that are part of the <code>DBI</code> interface. The tables we created can also be queried using <code>dplyr</code> directly and data the data transformation functions, <code>select</code>, <code>filter</code>, <code>group_by</code>, <code>mutate</code>, can be used in place of common SQL queries.</p>
 <div id="what-well-do" class="section level3">

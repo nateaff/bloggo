@@ -9,6 +9,10 @@ tags: ["R", "SQL", "eda"]
 
 
 
+<div class="figure">
+<img src="/img/lego-sqs.png" />
+
+</div>
 <p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it allows to manipulate and query data without loading the full dataset into memory. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
 <p>The main goal of the and a planned follow-up tutorial is to introduce several packages useful for interfacing with relational databases from R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package which implements standard <code>DBI</code> interface to relational databases.</p>
 <p>In part two we use the data manipulation verbs provided by the <code>dplyr</code> package to query and transform the data. The <code>dplyr</code> package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands.</p>

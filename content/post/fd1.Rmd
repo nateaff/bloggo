@@ -5,7 +5,10 @@ date: 2017-06-14T21:13:14-05:00
 categories: ["Math", "Statistics", "Time Series"]
 tags: ["R", "Time Series"]
 ---
+
+![](/img/cauchy-sqs.png)
  
+
 ```{r global_options, echo = FALSE}
 knitr::opts_chunk$set(
        knitr::opts_chunk$set(cache=TRUE),

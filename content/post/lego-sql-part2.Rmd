@@ -7,6 +7,8 @@ categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
 ---
 
+![](/img/lego-colors.png)
+
 ```{r global_options, echo=FALSE}
 knitr::opts_chunk$set(
        knitr::opts_chunk$set(cache=TRUE),
