@@ -31,7 +31,6 @@ For this thesis, I implemented the epsilon-complexity estimation procedure in an
 </p>
 
 
-
 <p style="font-size:90%;">
 An R package for computing the epsilon-complexity of a time series. The package also includes a nonparametric change-point detection algorithm.
 </p>
