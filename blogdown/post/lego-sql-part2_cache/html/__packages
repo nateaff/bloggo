@@ -1,0 +1,6 @@
+base
+DBI
+RPostgreSQL
+dplyr
+ggplot2
+bindrcpp
