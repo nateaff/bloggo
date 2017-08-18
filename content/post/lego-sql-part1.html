@@ -1,7 +1,8 @@
 ---
 title: "Exploring the Lego dataset with Postgres and dplyr"
 author: "Nathanael Aff"
-date: 2017-07-25T23:13:14-05:00
+date: 2017-07-25
+slug: exploring-lego-dataset-with-sql
 categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
 ---
@@ -9,18 +10,28 @@ tags: ["R", "SQL", "eda"]
 
 
 <p>There are a number of reasons why using relational databases for your data analyses can be a good practice: doing so requires cleaning and tidying your data, it helps preserve data integrity, and it allows to manipulate and query data without loading the full dataset into memory. In this tutorial, we will be using the <a href="https://www.kaggle.com/rtatman/lego-database">lego dataset</a>. It’s moderately sized at 3 MB and the data comes from a relational database, so it has already been cleaned and <a href="https://en.wikipedia.org/wiki/Database_normalization">normalized</a>. This means we can focus on creating and querying the database.</p>
-<p>The main goal of the and a planned follow-up tutorial is to introduce several packages useful for interfacing with relational databases from R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package. The <code>RPostgreSQL</code> package is one of several packages that use the standardized interface provided by the <code>DBI</code> package. Aside from setting up the initial connection to the database, the code here could be used with another database for which the <code>DBI</code> interface has been implemented. For example, the <code>RMySQL</code> and <code>RSQLite</code> are available for the SQLite and MySQL databases.</p>
+<p>The main goal of the and a planned follow-up tutorial is to introduce several packages useful for interfacing with relational databases from R. In this tutorial, we will walk through setting up a Postgres database with the <code>RPostgreSQL</code> package which implements standard <code>DBI</code> interface to relational databases.</p>
 <p>In part two we use the data manipulation verbs provided by the <code>dplyr</code> package to query and transform the data. The <code>dplyr</code> package allows you to select, filter, and mutate data stored in a database directly and without the need for using the full-fledged SQL commands.</p>
 <p>For the most part, everything will be done from within R the code should run on any R installation. The major exception is the initial installation of Postgres, but I will point to resources for the install step. There are two other small exceptions and I’ll point this out as they come up – in those cases, if you run into any trouble the steps can either be skipped or done manually outside of R. The post should be accessible to a beginner to intermediate R user. Some familiarity with SQL syntax and your systems command line might be helpful.</p>
 <p>The lego dataset can be downloaded manually from <a href="https://www.kaggle.com/rtatman/lego-database">Kaggle</a> with an account. I have mirrored the dataset on S3 to simplify the download step.</p>
 <p>Before getting started install <a href="https://www.postgresql.org/download/">postgreSQL</a>. See the <a href="https://wiki.postgresql.org/wiki/Detailed_installation_guides">installation page</a> for more detailed instruction and there are more <a href="http://www.postgresqltutorial.com/">tutorials here</a>. Once installed you should have a <strong>user</strong> and <strong>password</strong> with give you permissions to create a Postgres database.</p>
+<div id="what-well-do" class="section level3">
+<h3>What we’ll do</h3>
+<ul>
+<li>Get an introduction to the DBI interface</li>
+<li>Create a Postgres database</li>
+<li>Import tables from CSV files</li>
+<li>Use a few simple SQL queries</li>
+<li>Make a simple plot of the data</li>
+</ul>
+</div>
 <div id="related-tutorials" class="section level3">
 <h3>Related Tutorials</h3>
 <ul>
 <li><p><a href="http://www.datacarpentry.org/R-ecology-lesson/05-r-and-databases.html">This Data Carpentry</a> tutorial gives an introduction to using <code>dplyr</code> with SQLite and jumps directly into using <code>dplyr</code> syntax.</p></li>
 <li><p><a href="https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Interacting-with-databases-from-Shiny">This UseR2017 talk</a> by Barbara Borge Ribeiro give a quick overview of programmatically accessing relational databases from R</p></li>
 <li><p>Software Carpentry has a introductory tutorial for using databases and SQL which includes lessons for Python and R <a href="https://swcarpentry.github.io/sql-novice-survey/">here</a>.</p></li>
-<li><p>RStudio has a nice overview of database related packages <a href="https://db.rstudio.com/">here</a>.</p></li>
+<li><p>RStudio has a nice overview of database related packages <a href="https://db.rstudio.com/">here</a>, which includes a <a href="http://db.rstudio.com/dbi/">history</a> of the the DBI interface.</p></li>
 </ul>
 </div>
 <div id="setup-and-download" class="section level2">
@@ -87,8 +98,8 @@ con = DBI::dbConnect(pg,
                      host = &quot;localhost&quot;, 
                      port = 5432
                      )</code></pre>
-<p>If all has gone well we now have a connection to the Postgres and can create our database. With the <code>dbSendQuery</code> command we use any standard PostgreSQL command. We create the database with “create database legos”. and then test use the <code>dbReadTable</code> to create tables. For each CSV file, we create a single table using the <code>filenames</code> we created earlier.</p>
-<pre class="r"><code>DBI::dbSendQuery(con, &quot;create database legos&quot;)
+<p>If all has gone well we now have a connection to the Postgres and can create our database. With the <code>dbSendStatement</code> command we can use any standard PostgreSQL command. We create the database with “create database legos”. and then test use the <code>dbReadTable</code> to create tables. For each CSV file, we create a single table using the <code>filenames</code> we created earlier.</p>
+<pre class="r"><code>DBI::dbSendStatement(con, &quot;create database legos&quot;)
 # Test writing one file to the database
 colors &lt;- readr::read_csv(files[1])
 DBI::dbWriteTable(con, &quot;colors&quot;, colors , row.names=FALSE)
@@ -128,12 +139,14 @@ con = DBI::dbConnect(pg,
                 host = &quot;localhost&quot;, 
                 port = 5432
                 )</code></pre>
+<p>Note: The <a href="https://github.com/r-lib/keyring">keyring</a> package serves the same purpose and is available for installation using <code>devtools</code>.</p>
 </div>
 <div id="checking-the-database-schema" class="section level2">
 <h2>Checking the database schema</h2>
 <p>We retrieved two tables above to verify that they had been created. It would be nice to verify all the tables were created and to check the database’s current schema. Since we have a list of the table names, we’ll create a function that takes the table names so we can loop over the functions with lapply.</p>
 <p>The <a href="https://www.postgresql.org/docs/9.1/static/information-schema.html">information schema</a> is a set of views containing information about the database, user roles, column data types and a lot more. We will query the column view to check the data type and maximum character length.</p>
-<p>A side note: The <code>dbSendQuery</code> function does not return data until we call the <code>dbFetch()</code>. If you have not fetched the data you’ll get an error about ‘impending rows’. Clear the list with <code>dbClearResult(dbListResults(con)[[1]])</code>.</p>
+<p>The <code>dbSendQuery</code> can be used for sending standard <code>SELECT</code> queries, (and for more genral SQL statements although it is <a href="http://rstats-db.github.io/DBI/reference/dbSendQuery.html">not recommended</a>). The command does not return data until we call the <code>dbFetch</code> and results must be cleared with <code>dbClearResult</code>.</p>
+<p>If you have not fetched the data you’ll get an error about ‘impending rows’. Clear the list with <code>dbClearResult(dbListResults(con)[[1]])</code>.</p>
 <pre class="r"><code># Function to check table schema
 get_schema_query &lt;- function(tab){
   paste0(&quot;select column_name, data_type, character_maximum_length&quot;, 
@@ -153,15 +166,15 @@ check_schemas &lt;- function(tab){
 # Check all tables
 schemas &lt;- lapply(filenames, check_schemas)
 names(schemas) &lt;- filenames  </code></pre>
+<p>For queries where you know the size of the results is not too large or in interactive contexts, <code>dbGetQuery</code> performs basically the same tasks as the three <code>DBI</code> calls used above. I’ll use this command instead of the multistep calls required by <code>dbSendQuery</code> below.</p>
 </div>
 <div id="lets-plot-something" class="section level2">
 <h2>Let’s plot something</h2>
 <p>In the next tutorial, I’ll go over using <code>dplyr</code> functions to do some basic querying of the data. But we’ve made it this far so let’s plot something. We’ll query the color data set and plot all the colors used in lego sets since 1950.</p>
-<p>Colors are stored in the <code>rgb</code> column and transparency in <code>is_trans</code>. Here we pass <code>dbSendQuery</code> a basic SQL select command.</p>
-<pre class="r"><code># Select rgb and is_trans columns
-res &lt;- DBI::dbSendQuery(con, &quot;select rgb, is_trans from colors&quot;)
-rgb_df &lt;- DBI::dbFetch(res)
-DBI::dbClearResult(res)
+<p>Colors are stored in the <code>rgb</code> column and transparency in <code>is_trans</code>. Here we pass <code>dbGetQuery</code> a basic SQL select command.</p>
+<pre class="r"><code># Select rgb and is_trans columns 
+rgb_df &lt;- DBI::dbGetQuery(con, &quot;select rgb, is_trans from colors&quot;)
+
 # Check data
 dim(rgb_df)
 head(rgb_df)</code></pre>
