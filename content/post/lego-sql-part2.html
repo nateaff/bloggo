@@ -13,7 +13,7 @@ tags: ["R", "SQL", "eda"]
 <img src="/img/lego-colors.png" />
 
 </div>
-<p>In the <a href="2017/07/25/exploring-lego-dataset-with-sql/">previous post</a> I went over using the <code>R</code> standardized relational database API, <code>DBI</code>, to create a database and build tables from the <a href="https://www.kaggle.com/rtatman/lego-database">Lego CSV files</a>. In this post we will be using the <code>dplyr</code> package to query and manipulate the data. I will walk through how <code>dplyr</code> handles calls database queries and then I will use a few simple queries and ggplot to visualize how color the change in Lego brick colors over the yeras. This tutorial assumes you have already created a ‘lego’ database, although most steps could be followed by loading the Lego CSV files to dataframes. It will be helpful if you have some familiarity with <code>ggplot</code> and the basic <code>dplyr</code> functions.</p>
+<p>In the <a href="2017/07/25/exploring-lego-dataset-with-sql/">previous post</a> I went over using the <code>R</code> standardized relational database API, <code>DBI</code>, to create a database and build tables from the <a href="https://www.kaggle.com/rtatman/lego-database">Lego CSV files</a>. In this post we will be using the <code>dplyr</code> package to query and manipulate the data. I will walk through how <code>dplyr</code> handles calls database queries and then I will use a few simple queries and ggplot to visualize how color the change in Lego brick colors over the years. This tutorial assumes you have already created a ‘lego’ database, although most steps could be followed by loading the Lego CSV files to dataframes. It will be helpful if you have some familiarity with <code>ggplot</code> and the basic <code>dplyr</code> functions.</p>
 <p>In the <a href="2017/07/25/exploring-lego-dataset-with-sql/">last post</a> I went over querying a database using <code>dbGetQuery</code> and <code>dbSendQuery</code> functions that are part of the <code>DBI</code> interface. The tables we created can also be queried using <code>dplyr</code> directly and data the data transformation functions, <code>select</code>, <code>filter</code>, <code>group_by</code>, <code>mutate</code>, can be used in place of common SQL queries.</p>
 <div id="what-well-do" class="section level3">
 <h3>What we’ll do</h3>
@@ -33,7 +33,7 @@ tags: ["R", "SQL", "eda"]
 </div>
 <div id="connect-to-the-database" class="section level2">
 <h2>Connect to the database</h2>
-<p>First we connect to the database created in the previous post. You can pass your username and password in plaintext or use the <code>keyringr</code> package as described in the previous post.</p>
+<p>First we connect to the database created in the previous post. You can pass your username and password in plain text or use the <code>keyringr</code> package as described in the previous post.</p>
 <p><em>Note:</em> You can also run most of this code using the CSV files directly. To do this replace calls to a specific table with the corresponding dataframe loaded directly from the CSV file.</p>
 <pre class="r"><code>library(RPostgreSQL)
 library(dplyr)
@@ -54,7 +54,7 @@ con = DBI::dbConnect(pg,
 <pre class="r"><code># Check data
 DBI::dbListTables(con)
 DBI::dbListFields(con, &#39;sets&#39;)</code></pre>
-<p>You can also glance at the fields in a table without loading the table into memory using <code>dplyr</code>. With <code>dplyr</code> we call a specific table with the <code>tbl</code> function and then manipulate the object <code>dplyr</code> returns and treat that object (for a limted set of functions) as if it were a dataframe.</p>
+<p>You can also glance at the fields in a table without loading the table into memory using <code>dplyr</code>. With <code>dplyr</code> we call a specific table with the <code>tbl</code> function and then manipulate the object <code>dplyr</code> returns and treat that object (for a limited set of functions) as if it were a dataframe.</p>
 <pre class="r"><code># Example without using the pipe operator
 # Get the &#39;sets&#39; table
 res &lt;- tbl(con, &#39;sets&#39;) 
@@ -208,6 +208,8 @@ one_set$part_num</code></pre>
               mutate(name = name.x) %&gt;% 
               select(set_num, name, year, color_id, rgb, is_trans) %&gt;% 
               collect</code></pre>
+<p>Since we won’t need to make another query we also need to close our database connection.</p>
+<pre class="r"><code>DBI::dbDisconnect(con)</code></pre>
 <p>To plot the frequency of colors of unique parts we can use most of the plot from above. We make two changes:</p>
 <ol style="list-style-type: decimal">
 <li>Create a set of breaks to determine x-axist ticks on every 10 years</li>
