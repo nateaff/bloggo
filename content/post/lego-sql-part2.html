@@ -1,5 +1,5 @@
 ---
-title: "Exploring the Lego dataset with Postgres and dplyr, part II"
+title: "Exploring the Lego dataset with SQL and dplyr, part II"
 author: Nathanael Aff
 date: '2017-08-16'
 slug: exploring-lego-dataset-with-sql-part-ii
@@ -18,7 +18,7 @@ tags: ["R", "SQL", "eda"]
 <div id="what-well-do" class="section level3">
 <h3>What we’ll do</h3>
 <ul>
-<li>Query database using <code>dplyr</code></li>
+<li>Query our database using <code>dplyr</code></li>
 <li>Use <code>dplyr</code> functions to perform simple joins and transformations</li>
 <li>Create several visualizations of the use of color in Lego sets with <code>ggplot</code></li>
 </ul>
@@ -28,7 +28,7 @@ tags: ["R", "SQL", "eda"]
 <ul>
 <li>A short Rstudio <a href="http://db.rstudio.com/dplyr/">introduction to dplyr</a>.</li>
 <li><a href="http://www.datacarpentry.org/R-ecology-lesson/05-r-and-databases.html">This Data Carpentry</a> tutorial gives an introduction to using <code>dplyr</code> with SQLite and jumps directly into using <code>dplyr</code> syntax.</li>
-<li>An thorough <a href="http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html">introduction to ggplot</a> and another <a href="http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html">ggplot primer</a>.</li>
+<li>A thorough <a href="http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html">introduction to ggplot</a> and another <a href="http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html">ggplot primer</a>.</li>
 </ul>
 </div>
 <div id="connect-to-the-database" class="section level2">
@@ -50,11 +50,11 @@ con = DBI::dbConnect(pg,
                 host = &quot;localhost&quot;, 
                 port = 5432
                 )</code></pre>
-<p>In the previous post I wrote a function to get the basic schema of our tables. Here I just use <code>DBI</code> functions to examine what tables we have and what fields there are.</p>
+<p>In the previous post I wrote a function to get the basic schema of our tables. Here I use <code>DBI</code> functions to examine what tables we have and what fields there are.</p>
 <pre class="r"><code># Check data
 DBI::dbListTables(con)
 DBI::dbListFields(con, &#39;sets&#39;)</code></pre>
-<p>You can also glance at the fields in a table without loading the table into memory using <code>dplyr</code>. With <code>dplyr</code> we call a specific table with the <code>tbl</code> function and then manipulate the object <code>dplyr</code> returns and treat that object (at least for many functions) as if it were a dataframe.</p>
+<p>You can also glance at the fields in a table without loading the table into memory using <code>dplyr</code>. With <code>dplyr</code> we call a specific table with the <code>tbl</code> function and then manipulate the object <code>dplyr</code> returns and treat that object (for a limted set of functions) as if it were a dataframe.</p>
 <pre class="r"><code># Example without using the pipe operator
 # Get the &#39;sets&#39; table
 res &lt;- tbl(con, &#39;sets&#39;) 
