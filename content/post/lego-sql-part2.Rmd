@@ -1,5 +1,5 @@
 ---
-title: "Exploring the Lego dataset with Postgres and dplyr, part II"
+title: "Exploring the Lego dataset with SQL and dplyr, part II"
 author: Nathanael Aff
 date: '2017-08-16'
 slug: exploring-lego-dataset-with-sql-part-ii
@@ -29,7 +29,7 @@ In the [last post](2017/07/25/exploring-lego-dataset-with-sql/) I went over quer
 
 ### What we'll do
 
-* Query database using `dplyr`
+* Query our database using `dplyr`
 * Use `dplyr` functions to perform simple joins and transformations
 * Create several visualizations of the use of color in Lego sets with `ggplot`
 
@@ -37,7 +37,7 @@ In the [last post](2017/07/25/exploring-lego-dataset-with-sql/) I went over quer
 
 * A short Rstudio [introduction to dplyr](http://db.rstudio.com/dplyr/). 
 * [This Data Carpentry](http://www.datacarpentry.org/R-ecology-lesson/05-r-and-databases.html) tutorial gives an introduction to using `dplyr` with SQLite and jumps directly into using `dplyr` syntax.
-* An thorough [introduction to ggplot](http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html) and another [ggplot primer](http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html).
+* A thorough [introduction to ggplot](http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html) and another [ggplot primer](http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html).
 
 ## Connect to the database
 
@@ -63,14 +63,14 @@ con = DBI::dbConnect(pg,
                 )
 ```
 
-In the previous post I wrote a function to get the basic schema of our tables. Here I just use `DBI` functions to examine what tables we have and what fields there are.  
+In the previous post I wrote a function to get the basic schema of our tables. Here I use `DBI` functions to examine what tables we have and what fields there are.  
 
 ```{r glance}
 # Check data
 DBI::dbListTables(con)
 DBI::dbListFields(con, 'sets')
 ```
-You can also glance at the fields in a table without loading the table into memory using `dplyr`. With `dplyr` we call a specific table with the `tbl` function and then manipulate the object `dplyr` returns and treat that object (at least for many functions) as if it were a dataframe. 
+You can also glance at the fields in a table without loading the table into memory using `dplyr`. With `dplyr` we call a specific table with the `tbl` function and then manipulate the object `dplyr` returns and treat that object (for a limted set of functions) as if it were a dataframe. 
 
 ```{r glance2}
 # Example without using the pipe operator
