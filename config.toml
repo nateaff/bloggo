@@ -1,4 +1,4 @@
-baseurl = "http://nateaff.com/"
+baseurl = "https://nateaff.com/"
 relativeurls = true
 languageCode = "en-us"
 title = "Nathanael Aff"
