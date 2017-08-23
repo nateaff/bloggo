@@ -1,0 +1,430 @@
+---
+title: Mapping San Francisco's open data with leaflet 
+author: Nathanael Aff
+date: '2017-08-19'
+slug: sfdata-leaflet-rmd
+categories: ['Data Science', 'R']
+tags: ['EDA', 'R', 'Leaflet']
+draft: no
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(
+       knitr::opts_chunk$set(cache=FALSE),
+       fig.align = 'center', 
+       echo=FALSE, 
+       warning=FALSE, 
+       message=FALSE, 
+       fig.width = 6.5, 
+       fig.height = 6.5,
+       dev = 'png', 
+       eval = FALSE)
+```
+![](/img/sf-311.png)
+
+
+In this post I create an interactive map of the San Francisco 311 service requests related to San Francisco's homeless residents. To make the maps I use the R `leaflet` package which provides an R interface to the interactive Javascript mapping library of the same name. The data are available through San Francisco's open data portal, [DataSF](https://datasf.org/opendata/), which is powered by a [Socrata backend](https://dev.socrata.com/). I use two packages, `RSocrata` and `soql`, to simplify the process of querying Socrata API.
+
+I have wanted to look at the SF data for awhile but this exercise was also an excuse to see how some of the Rmarkdown htmlwidgets worked with the `blogdown` package and Hugo, which are used to make this blog. There were a couple problems rendering `leaflet` maps and `DT` datatable but these were solved using the `widgetframe` package to wrap the widgets. You can jump to the bottom to see code for the htmlwidgets.
+
+### SF 311 service call data 
+
+[SF311](https://www.sf311.org/web/guest/home) acts as a sort of customer service line where people can do everything from complaining about MUNI to reporting graffiti or broken street lights. One of the biggest categories of reports falls under the heading of homeless concerns and homeless encampments. I'm going to take a quick overview of the top 311 service requests categories and then I'll map a week of the homeless related subset of this data. To preview the dataset and for more information and links to the API URL, see this [DataSF page](https://data.sfgov.org/City-Infrastructure/311-Cases/vw6y-z8j6).
+
+### Querying the SODA API 
+
+The `Rsocrata` package provides functions for both querying and loading data using the SODA API. Like other REST API's, the resource -- in this case the data we want -- is retrieved by HTTP methods(e.g. GET) and a string that identifies the resource is formatted as a URL. The RSocrata `read.socrata` function handles the HTTP request and returns the data as a dataframe with POSIX formatted dates.
+
+For doing something other than downloading the complete dataset, which is also possible, we need to build an SoQL query. The `soql` package simplifies this step by providing functions for forming basic select queries. The query could also be written by hand, and the code below shows what that looks like SQL-like syntax looks like. 
+
+```{r data, eval = TRUE, echo = TRUE}
+# Libraries used
+# library(Rscorata)
+# library(soql)
+# library(readr)
+# library(leaflet)
+# library(DT)
+library(dplyr)
+library(ggplot2)
+
+# DataSF base URL for 311 data
+api_url <- "https://data.sfgov.org/resource/ktji-gk7t.json?"
+lim     <- "$limit=10"
+sel     <- paste("&$select=service_request_id",
+             "service_details,service_name",
+             "supervisor_district",
+             "requested_datetime",
+             "closed_date",
+             "lat",
+             "long", 
+             sep = ",")
+ord     <- "&$order=requested_datetime DESC"
+where   <- paste0("&$where=requested_datetime > ", 
+                 "'",Sys.Date() - 7, "T12:00:00'")
+query   <- paste0(api_url, lim, sel, ord)
+#data   <- RSocrata::read.socrata(query)  
+```
+
+The following `soql` functions perform the SQL or `dplyr` like actions of selecting, filtering and sorting:
+
+`soql_select`,`soql_where`, `soql_order`, `soql_simple_filter`. 
+
+There are also a few API specific commands. `soql_add_endpoint` adds the base API URL for a particular dataset or resource. The `soql_limit` and `soql_offset` are used for paging requests, that is, grabbing the result in batches of size equal to 'limit' and starting at the result array position 'offset'. The default limit is 50,000 with offset 0. For more details see the [Socrata API guide](https://dev.socrata.com/docs/paging.html).
+
+If you need to make a higher volume of API calls you can [register for an application token](https://dev.socrata.com/register). You don't need one, however, to get started using the API.
+
+I have already browsed the data some so for this call I narrow down the columns to those we'll be using. The 'service_name' column is the primary service category and 'service details' column is the name of request sub categories. Limiting the time period to (today - a week) results in around 10-15,000 requests.  
+
+```{r data2, eval=TRUE, echo = TRUE}
+# The API endpoint
+api_url <- "https://data.sfgov.org/resource/ktji-gk7t.json"
+token <- "4lYy14JyZIkVfzf68WFiz27BK"
+
+query <- soql::soql() %>% 
+         soql::soql_add_endpoint(api_url) %>%
+         soql::soql_limit(20000) %>%
+         soql::soql_select(paste(
+                 "service_request_id", 
+                 "service_details", 
+                 "service_name", 
+                 "supervisor_district", 
+                 "requested_datetime", 
+                 "closed_date", 
+                 "lat", 
+                 "long", 
+                 sep = ","
+                 )) %>%
+         soql::soql_order("requested_datetime", desc=TRUE) %>%
+         soql::soql_where(paste0("requested_datetime > '",
+                 Sys.Date() - 7, "T12:00:00'"))
+data <- RSocrata::read.socrata(query, app_token = token)
+```
+
+### Frequent service requests 
+
+The top request categories are plotted below. The 'Encampments' category is separate from the 'Homeless Concerns' category but combined they would be the second largest category after 'Street and Sidewalk Cleaning'. 
+
+```{r barplot1, eval=TRUE}  
+
+theme_min2 <- function(){  
+  theme_minimal() +   
+        theme(
+          legend.position = "none",
+          plot.background = element_rect(fill = "#fbfaf9", 
+                              color = "#fbfaf9"),
+          panel.grid.major = element_line(color = "gray80", 
+                               size = 0.4),
+          panel.grid.minor = element_line(color = "gray80", 
+                               size = 0.3),
+          panel.spacing = unit(1.2, "lines"),
+          plot.title = element_text(
+                    family = "Lato", 
+                    size = 13, 
+                    face = "bold", 
+                    color = "gray5"
+                    ),
+          plot.subtitle = element_text( 
+                      color = "gray10", 
+                      face = "plain", 
+                      size = 11),         
+          axis.title = element_text(
+                        # family = "Lato", 
+                        size = 11, 
+                        color="gray15", 
+                        ),
+          plot.caption = element_text(
+                          # family = "Lato", 
+                          face = "italic", 
+                          size = 10, 
+                          color = "gray25"
+                          )
+           ) 
+}
+
+# Convert names in Homeless Concerns type
+data$service_details[data$service_details == "aggressive_behavior"] <- "Aggressive Behavior"
+data$service_details[data$service_details == "wellbeing_check"] <- "Wellbeing Check"
+data$service_details[data$service_details == "homeless_other"] <- "Other"
+
+#a578bf
+#618933
+pal8 <- c("#459186","#b55609", "#9d5ec1","#65cc5f", 
+           "#3682af","#a38500","#992468", "#e25372", "#5281ce")
+
+pal <- colorRampPalette(pal8)(20)
+
+subtitle <- 'San Francisco 311 service requests for week of 8-15-2017'
+caption <- "source: datasf.org/opendata" 
+
+svc_counts <- data %>% 
+              dplyr::count(service_name) %>% 
+              dplyr::arrange(n) %>% 
+              dplyr::mutate(service_name = factor(service_name, service_name))  
+
+svc_counts %>% tail(20) %>%
+  ggplot() +
+  geom_bar(
+    aes(
+      x=service_name, 
+      y=n, 
+      fill = service_name), 
+      stat='identity'
+    ) +
+  coord_flip() + 
+  labs(
+    x = 'Service names', 
+    y = 'Request count', 
+    title = 'Top 20 service requests', 
+    subtitle = subtitle, 
+    caption = caption) + 
+  theme_min2() +  
+  theme(plot.title = element_text(hjust = -.9),
+        plot.subtitle = element_text(hjust = -11.7)) +
+  scale_fill_manual(values = pal)   
+
+```
+
+The daily pattern of requests can be made out in the time series of the top 8 categories below. The drop in MUNI feedback coincides with the weekend. I don't reproduce the plot here but plotting multiple week requests binned by day show spikes on weekday mornings with request tailing off by night and lower volumes on weekends, at least for the high volume service request categories.
+
+```{r timeseries, eval = TRUE}
+n <- 8
+top <- svc_counts$service_name %>% tail(n)
+
+counts <- data %>% 
+        filter(service_name %in% top) %>% 
+        dplyr::mutate(date = lubridate::round_date(requested_datetime, 
+                       unit = 'hour') ) %>% 
+        dplyr::count(service_name, date)
+len <- unique(counts$service_name) %>% length
+pal <- colorRampPalette(pal8)(len)
+
+gp <- counts %>%  
+      ggplot(aes(x = date, y = n)) + 
+      geom_area(aes(fill=service_name), alpha = 0.7) +
+      geom_line(aes(color=service_name), size = 0.8) +
+      labs(
+        x = "Day of Service Request", 
+        y = "Request Count", 
+        caption = "source: datasf.org/opendata", 
+        subtitle = subtitle, 
+        title = paste0("Top ", n, " service requests")) +
+      scale_colour_manual(values = pal) +
+      scale_fill_manual(values = pal)
+
+gp <- gp + theme_min2()
+
+gp + facet_wrap(~service_name, nrow = n/2) 
+```
+A break down the street cleaning category shows that it's mostly trash and dumping cleanup requests. 
+
+If you think of the top service categories -- street cleaning, abandoned vehicles, graffiti, and some of the homeless related sub categories -- these can be classed as requests to clean stuff up. 
+
+```{r barplot2, eval = TRUE}
+
+counts  <- data %>% 
+           dplyr::filter(service_name == "Street and Sidewalk Cleaning") %>%
+           dplyr::count(service_details) %>%
+           arrange(n)%>%
+           dplyr::mutate(service_details = factor(service_details, 
+             service_details)) 
+
+len <- unique(counts$service_details) %>% length
+pal <- colorRampPalette(pal8)(len)
+names(pal) <- sort(unique(counts$service_details))
+
+counts %>%
+ggplot() +
+  geom_bar(
+    aes(
+    x=service_details, 
+    y=n, 
+    fill = service_details), 
+    stat = 'identity'
+    ) +
+  coord_flip() + 
+  labs(
+    x = 'Service Details', 
+    y = 'Request Count',
+    caption = caption,
+    subtitle = subtitle,
+    title = 'Street and sidewalk cleaning request details') +
+  scale_fill_manual(values = pal) +
+  theme_min2() + 
+  theme(plot.title = element_text(hjust = -4.4),
+        plot.subtitle = element_text(hjust = -25.3))
+```
+
+### Homeless related requests 
+
+Let's take a look at the top homeless-related categories. The encampment category likely contains a number of duplicate requests for the same location, something we can check when we map the data.
+
+```{r barplot3, eval=TRUE}
+
+data_hl <- data %>% 
+           filter(service_name %in% c("Homeless Concerns", "Encampments"))
+
+names(pal8) <- sort(unique(data_hl$service_details))
+
+data_hl %>%
+dplyr::count(service_details) %>% 
+dplyr::arrange(n) %>% 
+dplyr::mutate(service_details=factor(service_details, service_details))%>%
+ggplot() +
+  geom_bar(
+    aes(
+    x = service_details, 
+    y = n, 
+    fill = service_details), 
+    stat = 'identity'
+    ) +
+  coord_flip() + 
+  labs(
+    x = 'Service Details', 
+    y = 'Request Count',
+    caption = caption,
+    subtitle = subtitle,
+    title = 'Homeless related service requests') +
+  scale_fill_manual(values = pal8) +
+  theme_min2() + 
+  theme(plot.title = element_text(hjust = -0.55),
+        plot.subtitle = element_text(hjust = -1.2))
+```
+
+And the time series plots for the homeless related calls.
+
+```{r timeseries2, eval = TRUE}
+# Group by hour
+counts <- data_hl %>% 
+        dplyr::mutate(date = lubridate::round_date(requested_datetime, 
+                       unit = 'hour') ) %>% 
+        dplyr::count(service_details, date)
+
+len <- unique(counts$service_details) %>% length
+pal <- colorRampPalette(pal8)(len)
+
+gp <- counts %>%  
+      ggplot(aes(x = date, y = n)) + 
+      geom_area(aes(fill = service_details), alpha = 0.7) +
+      geom_line( aes( color = service_details), size = 0.8) +
+      labs(
+        x = "Day of Service Request", 
+        y = "Request Count", 
+        caption = caption,
+        subtitle = subtitle, 
+        title = 'Homeless related service requests' ) +
+      scale_colour_manual(values = pal) +
+      scale_fill_manual(values = pal)
+
+gp <- gp + theme_min2() +
+      facet_wrap(~service_details, nrow = 4)
+gp 
+```
+
+### Mapping the data
+
+Finally, we map the details from the homeless related categories. The way maps are made with the `leaflet` package is somewhat to the way a ggplot is made by adding layers. It also should be familiar to anyone who has used the `ggmap` package. The base `leaflet()` function takes the data and additional layers -- tiles, polygons or markers --  can be added. 
+
+The `setView` function takes a center point and `fitBounds` takes the bounding longitude and latitude of the map. The `~` character can be used to reference objects in the data argument passed to the `leaflet` function. The default `addTiles()` function adds OpenStreetMap tiles and other tiles can be added using `addProviderTiles`. The demo of available leaflet providers can be found [here](http://leaflet-extras.github.io/leaflet-providers/preview/index.html). Adding map markers or 'circle markers' is mostly straightforward, although I mention one hitch below. 
+
+RStudio has a thorough [introduction](https://rstudio.github.io/leaflet/) to the package and reading the [map widget](https://rstudio.github.io/leaflet/map_widget.html) page is a good place if you want to understand the map options in more detail.
+
+
+```{r map, eval = TRUE, echo = TRUE, fig.align='center', fig.show='hold'}
+library(leaflet)
+# Get data from gist 
+data_url <- "https://git.io/v5IJV"
+pit_stops <- readr::read_csv(url(data_url))
+
+data$lat <- as.numeric(data$lat)
+data$long <- as.numeric(data$long)
+data$service_name <- as.factor(data$service_name)
+
+# Filter data
+data_hl <- data %>% filter(service_name %in% 
+                    c("Homeless Concerns", "Encampments"))
+factpal <- colorFactor(pal8, as.factor(data_hl$service_details))
+
+# Map center
+mlong <- -122.4446
+mlat  <- 37.75695
+
+# Leaflet base map and view
+m <- leaflet(data_hl, 
+       width = "100%", 
+       options = leafletOptions(minZoom = 10, maxZoom = 18)) %>% 
+    # fitBounds(-122.526441,37.692072,-122.36276,37.821818)
+     setView(lng = mlong, lat = mlat, zoom = 13)
+
+m <- m %>% 
+     addProviderTiles(providers$MtbMap) %>%
+     addProviderTiles(providers$Stamen.TonerLines,
+     options = providerTileOptions(opacity = 0.35)) %>%
+     addProviderTiles(providers$Stamen.TonerLabels)
+
+m <- m %>% 
+     addCircleMarkers(
+       lng = ~long, 
+       lat = ~lat,
+       popup = ~service_details,
+       label = ~service_details,
+       color = ~factpal(service_details), 
+       radius = 4, 
+       stroke = FALSE, 
+       fillOpacity = 0.7)
+
+icons <- makeAwesomeIcon(
+           icon= 'star-empty', 
+           markerColor = 'gray',
+           iconColor = 'white', 
+           library = 'glyphicon'
+           )
+
+m <- m %>% 
+     addAwesomeMarkers(
+        lng = pit_stops$long, 
+        lat = pit_stops$lat,
+        label = pit_stops$name,
+        icon = icons
+        ) 
+
+m <- m %>% addLegend(
+        "bottomleft", 
+        pal = factpal, 
+        values = ~data_hl$service_details,
+        title = "Request type", 
+        opacity = 1
+        )
+
+widgetframe::frameWidget(m, height = 600)
+```
+
+There aren't many public restrooms in San Francisco and the [Pit Stop](http://sfpublicworks.org/pitstop) program has added some public toilets. In addition to the homeless data, I have added markers where San Francisco has recently put some public restrooms. They seem pretty well located if encampments and waste are an indication of where they are most needed. One odd thing about them is that most aren't available 12 or more hours a day. Most are removed for servicing over night and some close as early as 6 or 7 PM. There may be other policy reasons why they aren't available at night but if you have 4000+ unsheltered homeless people and no public restrooms for 12 hours of the day, it seems like you can expect to find some poop on the street. 
+
+This is just one week of data and as I mentioned above the clustered sightings are likely repeated requests for the same location. Human waste sightings coincide to some degree with encampments and population density. There are some spots with encampments and few human waste sightings and a few spots, around Sacramento Street, for example, with more human waste but no encampments. 
+
+### Fixing htmlwidget rendering issues
+
+The `leaflet` map rendered fine until I modified the marker type which interfered with the page's CSS for some reason. This was fixed by using the `widgetframe` package. The same issue solved the problems with using datatables from the `DT` package. In both cases, I just assigned the widget to a variable and wrapped that in the `frameWidget` function.
+
+Here is a datatable of the dataset plotted in the map above. 
+
+```{r datatable, echo = TRUE, eval = TRUE}
+# Style caption
+caption <- htmltools::tags$caption(
+             style = paste0(
+                      'caption-side: top;',  
+                      'text-align: left;'),  
+            'SF 311 homeless related service requests, previous 7 days')
+
+dt1 <- DT::datatable(data_hl[, c(3,4,7,8)], 
+            # Change column names
+            colnames = c("Date", "Service", "District", "Close Date"), 
+            height = 600, 
+            caption = caption) %>%
+       # Format columns 
+       DT::formatDate(c(1,4), 'toLocaleDateString') %>%
+       DT::formatStyle(1:4, `font-size`= '16px', `font-family`= 'Lato')
+
+# Use widgetframe package to render table
+widgetframe::frameWidget(dt1)
+```

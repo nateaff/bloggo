@@ -1,0 +1,79 @@
+---
+title: Lego Topic Models
+author: Nathanael Aff
+date: '2017-08-21'
+slug: lego-topic-models-rmd
+categories: ['Data Science', 'R', 'NLP']
+tags: ['Topic Models', 'EDA']
+draft: yes
+---
+
+
+
+<p>Introduction:</p>
+<p>We’ll use topic models to explore the Lego dataset.</p>
+<p>The lego sets are grouped by theme and some themes have parent themes. Do the themes follow a color scheme and can we recover the theme from the color pieces. To put this another way, if we cluster the sets by color would we find that they cluster in a way that matches their themes?</p>
+<p>One way to approach the problem is to treat colors as text. There might be another approach but this also give me an excuse to try out so</p>
+<div id="section" class="section level3">
+<h3></h3>
+<ul>
+<li>Look at color tf-idf</li>
+<li>Use perplexity to choose a number for our topic models</li>
+<li></li>
+</ul>
+</div>
+<div id="the-themes" class="section level3">
+<h3>The themes</h3>
+<p>A number of themes had no parent. Some of these top-level parent themes but others were neither parents nor had a ‘parent_id’. I removed these themes with a single set so that the clustering wouldn’t be thrown off by too many unique themes. The <code>parent_set</code> is all those themes that are parent themes or have parent themes.</p>
+<pre><code>## [1] 614</code></pre>
+<pre><code>##  [1]  NA 171 227 264 280 482 497 302 126 252 318 400 571 112 254 276 148
+## [18] 236  67 241 465  94 204 304 147 435 504  50 258 518 123 454 180  23
+## [35] 390  52 524 529 591 273 296   1 484 324 290 507 233 206 279 562 408
+## [52] 443 158  22 373 566 411 478 494 535 501  38 207 155 458 365 217 287
+## [69] 315 246 105 159 307 186 475   5 561 580 425</code></pre>
+<p>There are () unique themes including some subthemes. My guess is that while some themes will have a unique color signature, there will be</p>
+<pre><code>## [1] TRUE</code></pre>
+<pre><code>## # A tibble: 6 x 7
+##   set_num                 name            theme theme_id  year      rgba
+##     &lt;chr&gt;                &lt;chr&gt;            &lt;chr&gt;    &lt;int&gt; &lt;int&gt;     &lt;chr&gt;
+## 1  6852-1       Sonar Security  Space Police II      140  1993 #05131DFF
+## 2 76076-1 Captain America Jet            Marvel      493  2017 #C91A09FF
+## 3  6087-1  Witch&#39;s Magic Manor   Fright Knights      195  1997 #05131DFF
+## 4 41147-1 Anna&#39;s Snow Adventur             &lt;NA&gt;      579  2017 #ADC3C0FF
+## 5 70009-1 Worriz’s Combat Lair Legends of Chima      571  2013 #6C6E68FF
+## 6 30034-1     Racing Tow Truck      Tiny Turbos      120  2010 #F2CD37FF
+## # ... with 1 more variables: quantity &lt;int&gt;</code></pre>
+</div>
+<div id="tf-idf" class="section level3">
+<h3>TF-IDF</h3>
+<p>Definition of tf-idf</p>
+<p>We expect the top tf-idf entries to be sets with a much higher than average number of some rare color while low color and set combinations with low tf-idf … common color.</p>
+<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/tf-idf-1.png" width="624" style="display: block; margin: auto;" /><img src="/post/2017-08-21-lego-topic-models_files/figure-html/tf-idf-2.png" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div id="lda" class="section level3">
+<h3>LDA</h3>
+<p>Definition</p>
+<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/load-lda-1.png" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div id="topic-modeling" class="section level3">
+<h3>Topic Modeling</h3>
+<p><a href="http://tidytextmining.com/topicmodeling.html">Tidytext</a></p>
+<p>Note that tidy returns the Beta or Gamma matrix along with the term and topic in a tidy (long) data frame. Here a term is a color.</p>
+<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/top-terms-1.png" width="624" style="display: block; margin: auto;" /><img src="/post/2017-08-21-lego-topic-models_files/figure-html/top-terms-2.png" width="624" style="display: block; margin: auto;" /></p>
+<p>The Gamma is the posterior distirbution over topics. The Beta distribution is the generative model or distribution from which a given topic is drawn. (Clarify)</p>
+<pre><code>##  [1] &quot;Mini VW Beetle&quot;       &quot;My First Bus&quot;         &quot;Volkswagen Beetle&quot;   
+##  [4] &quot;Dragon Pod&quot;           &quot;My First Number Trai&quot; &quot;Lightning Dragon Bat&quot;
+##  [7] &quot;Big Construction Sit&quot; &quot;Colored Globes&quot;       &quot;Gorzan’s Gorilla Str&quot;
+## [10] &quot;Construction&quot;         &quot;Miles&#39; Space Adventu&quot; &quot;Crawley&quot;             
+## [13] &quot;Ship Promotional (Du&quot; &quot;LEGO Star Wars Jedi &quot; &quot;Krypto Saves the Day&quot;
+## [16] &quot;Baby Calf&quot;            &quot;Cole&#39;s Dragon&quot;        &quot;Petrol Station&quot;      
+## [19] &quot;The Joker Mini Mech &quot; &quot;Creative Builder Box&quot;</code></pre>
+<pre><code>##  [1] &quot;Friends Tic-Tac-Toe&quot;  &quot;Organiser&quot;            &quot;Doll&#39;s House&quot;        
+##  [4] &quot;Party Train&quot;          &quot;Friends Party Set&quot;    &quot;Disney Princess™ Col&quot;
+##  [7] &quot;Heartlake Dog Show&quot;   &quot;Desk&quot;                 &quot;This moments&quot;        
+## [10] &quot;Sunshine Harvest&quot;     &quot;All-in-One-Pink-Box-&quot; &quot;Minnie&#39;s Cafe&quot;       
+## [13] &quot;Stephanie&#39;s Friendsh&quot; &quot;Mia&#39;s Bedroom&quot;        &quot;Pony Farm&quot;           
+## [16] &quot;My First Plane&quot;       &quot;Olivia&#39;s Ice Cream B&quot; &quot;Emma&#39;s Ice Cream Tru&quot;
+## [19] &quot;Amusement Park Hot D&quot; &quot;Stephanie’s Pet Patr&quot;</code></pre>
+<p>Do they match the sets?</p>
+</div>
