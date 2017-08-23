@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
        eval = FALSE)
 ```
 
-In the [previous post](2017/07/25/exploring-lego-dataset-with-sql/) I went over using the `R` standardized relational database API, `DBI`, to create a database and build tables from the [Lego CSV files](https://www.kaggle.com/rtatman/lego-database). In this post we will be using the `dplyr` package to query and manipulate the data. I will walk through how `dplyr` handles calls database queries and then I will use a few simple queries and ggplot to visualize how color the change in Lego brick colors over the yeras. This tutorial assumes you have already created a 'lego' database, although most steps could be followed by loading the Lego CSV files to dataframes. It will be helpful if you have some familiarity with `ggplot` and the basic `dplyr` functions.
+In the [previous post](2017/07/25/exploring-lego-dataset-with-sql/) I went over using the `R` standardized relational database API, `DBI`, to create a database and build tables from the [Lego CSV files](https://www.kaggle.com/rtatman/lego-database). In this post we will be using the `dplyr` package to query and manipulate the data. I will walk through how `dplyr` handles calls database queries and then I will use a few simple queries and ggplot to visualize how color the change in Lego brick colors over the years. This tutorial assumes you have already created a 'lego' database, although most steps could be followed by loading the Lego CSV files to dataframes. It will be helpful if you have some familiarity with `ggplot` and the basic `dplyr` functions.
 
 
 In the [last post](2017/07/25/exploring-lego-dataset-with-sql/) I went over querying a database using `dbGetQuery` and `dbSendQuery` functions that are part of the `DBI` interface. The tables we created can also be queried using `dplyr` directly and data the data transformation functions, `select`, `filter`, `group_by`, `mutate`, can be used in place of common SQL queries.
@@ -41,7 +41,7 @@ In the [last post](2017/07/25/exploring-lego-dataset-with-sql/) I went over quer
 
 ## Connect to the database
 
-First we connect to the database created in the previous post. You can pass your username and password in plaintext or use the `keyringr` package as described in the previous post. 
+First we connect to the database created in the previous post. You can pass your username and password in plain text or use the `keyringr` package as described in the previous post. 
 
 _Note:_ You can also run most of this code using the CSV files directly. To do this replace calls to a specific table with the corresponding dataframe loaded directly from the CSV file.
 
@@ -70,7 +70,7 @@ In the previous post I wrote a function to get the basic schema of our tables. H
 DBI::dbListTables(con)
 DBI::dbListFields(con, 'sets')
 ```
-You can also glance at the fields in a table without loading the table into memory using `dplyr`. With `dplyr` we call a specific table with the `tbl` function and then manipulate the object `dplyr` returns and treat that object (for a limted set of functions) as if it were a dataframe. 
+You can also glance at the fields in a table without loading the table into memory using `dplyr`. With `dplyr` we call a specific table with the `tbl` function and then manipulate the object `dplyr` returns and treat that object (for a limited set of functions) as if it were a dataframe. 
 
 ```{r glance2}
 # Example without using the pipe operator
@@ -230,6 +230,12 @@ set_colors <- sets %>%
               select(set_num, name, year, color_id, rgb, is_trans) %>% 
               collect
 ```
+Since we won't need to make another query we also need to close our database connection. 
+
+```{r}
+DBI::dbDisconnect(con)
+```
+
 To plot the frequency of colors of unique parts we can use most of the plot from above. We make two changes: 
 
   1. Create a set of breaks to determine x-axist ticks on every 10 years
