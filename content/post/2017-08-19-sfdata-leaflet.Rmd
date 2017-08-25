@@ -25,81 +25,49 @@ knitr::opts_chunk$set(
 
 In this post I create an interactive map of the San Francisco 311 service requests related to San Francisco's homeless residents. To make the maps I use the R `leaflet` package which provides an R interface to the interactive Javascript mapping library of the same name. The data are available through San Francisco's open data portal, [DataSF](https://datasf.org/opendata/), which is powered by a [Socrata backend](https://dev.socrata.com/). I use two packages, `RSocrata` and `soql`, to simplify the process of querying Socrata API.
 
-I have wanted to look at the SF data for awhile but this exercise was also an excuse to see how some of the Rmarkdown htmlwidgets worked with the `blogdown` package and Hugo, which are used to make this blog. There were a couple of problems rendering `leaflet` maps and the `DT` datatable but these were solved using the `widgetframe` package to wrap the widgets. You can jump to the bottom to see code for making `htmlwidgets` work with Hugo.
+I have wanted to look at the SF data for awhile but this exercise was also an excuse to see how some of the Rmarkdown htmlwidgets worked with the `blogdown` package and Hugo, which are used to make this blog. There were a couple of problems rendering `leaflet` maps and the `DT` datatable but these were solved using the [`widgetframe`](https://github.com/bhaskarvk/widgetframe) package that wraps interactive htmlwidgets in an iframe. You can jump to the bottom to see code for making `htmlwidgets` work with Hugo.
 
-### SF 311 service call data 
+### SF 311 service request data 
 
-[SF311](https://www.sf311.org/web/guest/home) acts as a sort of customer service line where people can do everything from complaining about MUNI to reporting graffiti or broken street lights. One of the biggest categories of reports falls under the heading of homeless concerns and homeless encampments. I'm going to take a quick overview of the top 311 service requests categories and then I'll map a week of the homeless related subset of this data. To preview the dataset and for more information and links to the API URL, see this [DataSF page](https://data.sfgov.org/City-Infrastructure/311-Cases/vw6y-z8j6).
+San Francisco's [311](https://www.sf311.org/web/guest/home) service line and application receives non-emergency requests and comments for everything from complaints about MUNI to reporting graffiti or broken street lights. I'm going to take a quick overview of the top 311 service requests categories and then I'll map a week of the homeless related subset of this data. To preview the dataset and for more information and links to the API URL, see this [DataSF page](https://data.sfgov.org/City-Infrastructure/311-Cases/vw6y-z8j6).
 
 ### Querying the SODA API 
 
 The `Rsocrata` package provides functions for both querying and loading data using the SODA API. Like other REST API's, the resource -- in this case the data we want -- is retrieved by HTTP methods(e.g. GET) and a string that identifies the resource is formatted as a URL. The RSocrata `read.socrata` function handles the HTTP request and returns the data as a dataframe with POSIX formatted dates.
 
-For doing something other than downloading the complete dataset we need to build an SoQL query. The `soql` package simplifies this step by providing functions for forming basic select queries. The query could also be written by hand, and the code below shows what that SQL-like syntax looks like. 
-
-```{r data, eval = TRUE, echo = TRUE}
-# Libraries used
-# library(Rscorata)
-# library(soql)
-# library(readr)
-# library(leaflet)
-# library(DT)
-library(dplyr)
-library(ggplot2)
-
-# DataSF base URL for 311 data
-api_url <- "https://data.sfgov.org/resource/ktji-gk7t.json?"
-lim     <- "$limit=10"
-sel     <- paste("&$select=service_request_id",
-             "service_details,service_name",
-             "supervisor_district",
-             "requested_datetime",
-             "closed_date",
-             "lat",
-             "long", 
-             sep = ",")
-ord     <- "&$order=requested_datetime DESC"
-where   <- paste0("&$where=requested_datetime > ", 
-                 "'",Sys.Date() - 7, "T12:00:00'")
-query   <- paste0(api_url, lim, sel, ord)
-#data   <- RSocrata::read.socrata(query)  
-```
-
-The following `soql` functions perform the SQL or `dplyr` like actions of selecting, filtering and sorting:
+For doing something other than downloading the complete dataset we need to build an SoQL query. The `soql` package simplifies this step by providing functions for forming basic select queries. The following `soql` functions perform the SQL or `dplyr` like actions of selecting, filtering and sorting:
 
 `soql_select`,`soql_where`, `soql_order`, `soql_simple_filter`. 
 
-There are also a few API specific commands. `soql_add_endpoint` adds the base API URL for a particular dataset or resource. The `soql_limit` and `soql_offset` are used for paging requests, that is, grabbing the result in batches of size equal to 'limit' and starting at the result array position 'offset'. The default limit is 50,000 with offset 0. For more details see the [Socrata API guide](https://dev.socrata.com/docs/paging.html).
+There are also a few API specific commands. `soql_add_endpoint` adds the base API URL for a particular dataset or resource. The `soql_limit` and `soql_offset` are used for paging requests, that is, grabbing the result in batches of size equal to 'limit' and starting at the result array position 'offset'. The default limit is 50,000 with offset 0. For details or to see the [Socrata API guide](https://dev.socrata.com/docs/paging.html). 
 
 If you need to make a higher volume of API calls you can [register for an application token](https://dev.socrata.com/register). You don't need one, however, to get started using the API.
 
-I have already browsed the data some so for this call I narrow down the columns to those we'll be using. The 'service_name' column is the primary service category and 'service details' column is the name of request sub categories. Limiting the time period to (today - a week) results in around 10-15,000 requests.  
+I have already browsed the data some so for this call I narrow down the columns to those we'll be using. The 'service_name' column is the primary service category and 'service details' column is the name of request sub categories. Limiting the time period to (today - a week) resulted in around 10-15,000 requests across all service types.  
 
 
 ```{r data2, eval = TRUE}
-# Run this one 
-
 # The API endpoint
 api_url <- "https://data.sfgov.org/resource/ktji-gk7t.json"
 token <- "4lYy14JyZIkVfzf68WFiz27BK"
 
-query <- soql::soql() %>% 
-         soql::soql_add_endpoint(api_url) %>%
-         soql::soql_limit(20000) %>%
-         soql::soql_select(paste(
-                 "service_request_id", 
-                 "service_details", 
-                 "service_name", 
-                 "supervisor_district", 
-                 "requested_datetime", 
-                 "closed_date", 
-                 "lat", 
-                 "long", 
-                 sep = ","
-                 )) %>%
-         soql::soql_order("requested_datetime", desc=TRUE) %>%
-         soql::soql_where(paste0("requested_datetime > '",
-                 Sys.Date() - 7, "T12:00:00'"))
+query <- soql() %>% 
+         soql_add_endpoint(api_url) %>%
+         soql_limit(20000) %>%
+         soql_select(paste(
+           "service_request_id", 
+           "service_details", 
+           "service_name", 
+           "supervisor_district", 
+           "requested_datetime", 
+           "closed_date", 
+           "lat", 
+           "long", 
+           sep = ","
+           )) %>%
+         soql_order("requested_datetime", desc=TRUE) %>%
+         soql_where(paste0("requested_datetime > '",
+           Sys.Date() - 7, "T12:00:00'"))
 data <- RSocrata::read.socrata(query, app_token = token)
 ```
 
@@ -107,10 +75,10 @@ data <- RSocrata::read.socrata(query, app_token = token)
 # The API endpoint
 api_url <- "https://data.sfgov.org/resource/ktji-gk7t.json"
 
-query <- soql::soql() %>% 
-         soql::soql_add_endpoint(api_url) %>%
-         soql::soql_limit(20000) %>%
-         soql::soql_select(paste(
+query <- soql() %>% 
+         soql_add_endpoint(api_url) %>%
+         soql_limit(20000) %>%
+         soql_select(paste(
                  "service_request_id", 
                  "service_details", 
                  "service_name", 
@@ -121,8 +89,8 @@ query <- soql::soql() %>%
                  "long", 
                  sep = ","
                  )) %>%
-         soql::soql_order("requested_datetime", desc=TRUE) %>%
-         soql::soql_where(paste0("requested_datetime > '",
+         soql_order("requested_datetime", desc=TRUE) %>%
+         soql_where(paste0("requested_datetime > '",
                  Sys.Date() - 7, "T12:00:00'"))
 data <- RSocrata::read.socrata(query)
 ```
@@ -360,7 +328,7 @@ gp
 
 ### Mapping the data
 
-Finally, we map the details from the homeless related categories. The way maps are made with the `leaflet` package is somewhat to the way a ggplot is made by adding layers. It also should be familiar to anyone who has used the `ggmap` package. The base `leaflet()` function takes the data and additional layers -- tiles, polygons or markers --  can be added. 
+Now I'll map the details from the homeless related categories. The way maps are made with the `leaflet` package is somewhat to the way a ggplot is made by adding layers. It also should be familiar to anyone who has used the `ggmap` package. The base `leaflet()` function takes the data and additional layers -- tiles, polygons or markers --  can be added. 
 
 The `setView` function takes a center point and `fitBounds` takes the bounding longitude and latitude of the map. The `~` character can be used to reference objects in the data argument passed to the `leaflet` function. The default `addTiles()` function adds OpenStreetMap tiles and other tiles can be added using `addProviderTiles`. The demo of available leaflet providers can be found [here](http://leaflet-extras.github.io/leaflet-providers/preview/index.html). Adding map markers or 'circle markers' is mostly straightforward, although I mention one hitch below. 
 
@@ -379,7 +347,7 @@ data$service_name <- as.factor(data$service_name)
 
 # Filter data
 data_hl <- data %>% filter(service_name %in% 
-                    c("Homeless Concerns", "Encampments"))
+                      c("Homeless Concerns", "Encampments"))
 factpal <- colorFactor(pal8, as.factor(data_hl$service_details))
 
 # Map center
@@ -393,12 +361,14 @@ m <- leaflet(data_hl,
     # fitBounds(-122.526441,37.692072,-122.36276,37.821818)
      setView(lng = mlong, lat = mlat, zoom = 13)
 
+# Add map tiles
 m <- m %>% 
      addProviderTiles(providers$MtbMap) %>%
      addProviderTiles(providers$Stamen.TonerLines,
      options = providerTileOptions(opacity = 0.35)) %>%
      addProviderTiles(providers$Stamen.TonerLabels)
 
+# Add request data 
 m <- m %>% 
      addCircleMarkers(
        lng = ~long, 
@@ -410,6 +380,7 @@ m <- m %>%
        stroke = FALSE, 
        fillOpacity = 0.7)
 
+# Define map markers
 icons <- makeAwesomeIcon(
            icon= 'star-empty', 
            markerColor = 'gray',
@@ -417,6 +388,7 @@ icons <- makeAwesomeIcon(
            library = 'glyphicon'
            )
 
+# Add customized markers
 m <- m %>% 
      addAwesomeMarkers(
         lng = pit_stops$long, 
@@ -442,7 +414,7 @@ This is just one week of data and as I mentioned above the clustered sightings a
 
 ### Fixing htmlwidget rendering issues
 
-The `leaflet` map rendered fine until I modified the marker type which interfered with the page's CSS for some reason. This was fixed by using the `widgetframe` package. The same issue solved the problems with using datatables from the `DT` package. In both cases, I just assigned the widget to a variable and wrapped that in the `frameWidget` function.
+The `leaflet` map rendered fine until I modified the marker type which interfered with the page's CSS for some reason. This was fixed by using the `widgetframe` package. The same issue solved the problems with using datatables from the `DT` package. In both cases, I just assigned the widget to a variable passed that to the `frameWidget` function.
 
 Here is a datatable of the dataset plotted in the map above. 
 
@@ -455,7 +427,7 @@ caption <- htmltools::tags$caption(
             'SF 311 homeless related service requests, previous 7 days')
 
 dt1 <- DT::datatable(data_hl[, c(3,4,7,8)], 
-            # Change column names
+       # Change column names
             colnames = c("Date", "Service", "District", "Close Date"), 
             height = 600, 
             caption = caption) %>%

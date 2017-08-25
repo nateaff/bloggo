@@ -79,7 +79,7 @@ set_colors <-
                   paste0("#", rgb, '80'), 
                   paste0("#", rgb, 'FF'))) %>% 
   select(set_num, name, theme, theme_id,year, rgba, quantity) %>% 
-  sample_n(100000) 
+  sample_n(10000) 
 
 head(set_colors)
 
@@ -111,15 +111,26 @@ names(pal) <- unique(pal)
 set_words <- set_words %>%
   tidytext::bind_tf_idf(rgba, set_num, n)
 
-top <- set_words %>%   
-       arrange(desc(tf_idf)) %>%
-       mutate(rgba = factor(rgba, levels = unique(rgba))) %>%
-       head(20)
-
 tail <- set_words %>%   
-       arrange(desc(tf_idf)) %>%
+       arrange(tf_idf) %>%
        mutate(rgba = factor(rgba, levels = unique(rgba))) %>%
-       tail(20)
+       head(50) %>%
+       arrange(desc(tf_idf))
+
+tail <- tail[match(unique(tail$rgba), tail$rgba), ]
+tail$rgba <- factor(tail$rgba, tail$rgba)
+tail <- tail[1:12, ]
+
+top <- set_words %>%   
+       arrange(tf_idf) %>%
+       mutate(rgba = factor(rgba, levels = unique(rgba))) %>%
+       tail(30) %>% 
+       arrange(desc(tf_idf))
+
+top <- top[match(unique(top$rgba), top$rgba),] %>%
+arrange(tf_idf)
+top$rgba <- factor(top$rgba, top$rgba)
+top <- top[1:12, ]
 
 # Highest td-idf
 top %>%
@@ -130,22 +141,18 @@ ggplot() +
   scale_fill_manual(values = pal) + 
   labs(x = NULL, y = "tf-idf") +
   coord_flip() + 
-  theme_minimal() +
-  # theme(axis.text.y=element_blank())+
-  facet_wrap(~name, nrow = 3)
+  theme_minimal()  
 
 # Lowest td-idf
 tail  %>%
-ggplot() +
-  geom_bar(aes(x = rgba, y = tf_idf, fill = rgba), 
+ggplot(aes(x = rgba, y = tf_idf)) +
+  geom_bar(aes(fill = rgba),
     stat = 'identity', 
     show.legend = FALSE) +
   scale_fill_manual(values = pal) + 
   labs(x = NULL, y = "tf-idf") +
   coord_flip() + 
-  theme_minimal()+
-  theme( axis.text.x=element_blank()) +
-  facet_wrap(~name, nrow = 5)
+  theme_minimal() 
  
 
 ## ----lda1, eval = FALSE--------------------------------------------------
@@ -156,6 +163,43 @@ ggplot() +
 ## set_lda_compare <- n_topics %>%
 ## purrr::map(LDA, x = set_dtm, control = list(seed = 1109))
 ## 
+
+ 
+#----------------------------------------------------------
+# 5-cv
+#----------------------------------------------------------
+library(topicmodels)
+library(tidytext)
+# Make document term matrix
+set_words %>% 
+select(name, rgba, n) %>% 
+crossv_kfold(5) -> folds
+
+
+folds %>% 
+mutate(dtm = cast_dtm(train, name, rgba, n))
+
+map(folds$train, ~ cast_dtm(., name, rgba, n))
+
+cast_dtm(folds$train[[1]])
+
+dtm <- function(x){
+  cast_dtm(x, name, rgba, n)
+}
+
+folds %>% mutate(dtm = map(train, dtm))
+
+
+
+n_topics <- c(30, 35, 30, 40, 45, 50)
+
+set_dtm %>%
+crossv_kfold(k = 5) -> folds 
+mutate(model = map(train, 
+  ~LDA(n_topics, x = set_dtm., control = list(seed = 1))))-> models
+  
+
+
 
 ## ----load-lda, eval = TRUE, echo = FALSE---------------------------------
 n_topics <- c(5, 10, 25, 35, 50, 65, 80, 100)
