@@ -19,52 +19,36 @@ draft: no
 
 </div>
 <p>In this post I create an interactive map of the San Francisco 311 service requests related to San Francisco’s homeless residents. To make the maps I use the R <code>leaflet</code> package which provides an R interface to the interactive Javascript mapping library of the same name. The data are available through San Francisco’s open data portal, <a href="https://datasf.org/opendata/">DataSF</a>, which is powered by a <a href="https://dev.socrata.com/">Socrata backend</a>. I use two packages, <code>RSocrata</code> and <code>soql</code>, to simplify the process of querying Socrata API.</p>
-<p>I have wanted to look at the SF data for awhile but this exercise was also an excuse to see how some of the Rmarkdown htmlwidgets worked with the <code>blogdown</code> package and Hugo, which are used to make this blog. There were a couple of problems rendering <code>leaflet</code> maps and the <code>DT</code> datatable but these were solved using the <code>widgetframe</code> package to wrap the widgets. You can jump to the bottom to see code for making <code>htmlwidgets</code> work with Hugo.</p>
-<div id="sf-311-service-call-data" class="section level3">
-<h3>SF 311 service call data</h3>
-<p><a href="https://www.sf311.org/web/guest/home">SF311</a> acts as a sort of customer service line where people can do everything from complaining about MUNI to reporting graffiti or broken street lights. One of the biggest categories of reports falls under the heading of homeless concerns and homeless encampments. I’m going to take a quick overview of the top 311 service requests categories and then I’ll map a week of the homeless related subset of this data. To preview the dataset and for more information and links to the API URL, see this <a href="https://data.sfgov.org/City-Infrastructure/311-Cases/vw6y-z8j6">DataSF page</a>.</p>
+<p>I have wanted to look at the SF data for awhile but this exercise was also an excuse to see how some of the Rmarkdown htmlwidgets worked with the <code>blogdown</code> package and Hugo, which are used to make this blog. There were a couple of problems rendering <code>leaflet</code> maps and the <code>DT</code> datatable but these were solved using the <a href="https://github.com/bhaskarvk/widgetframe"><code>widgetframe</code></a> package that wraps interactive htmlwidgets in an iframe. You can jump to the bottom to see code for making <code>htmlwidgets</code> work with Hugo. The package is not on CRAN so you’ll need to install it with with <code>devtools</code>.</p>
+<div id="sf-311-service-request-data" class="section level3">
+<h3>SF 311 service request data</h3>
+<p>San Francisco’s <a href="https://www.sf311.org/web/guest/home">311</a> service line and application receives non-emergency requests and comments for everything from complaints about MUNI to reporting graffiti or broken street lights. I’m going to take a quick overview of the top 311 service requests categories and then I’ll map a week of the homeless related subset of this data. To preview the dataset and for more information and links to the API URL, see this <a href="https://data.sfgov.org/City-Infrastructure/311-Cases/vw6y-z8j6">DataSF page</a>.</p>
 </div>
 <div id="querying-the-soda-api" class="section level3">
 <h3>Querying the SODA API</h3>
 <p>The <code>Rsocrata</code> package provides functions for both querying and loading data using the SODA API. Like other REST API’s, the resource – in this case the data we want – is retrieved by HTTP methods(e.g. GET) and a string that identifies the resource is formatted as a URL. The RSocrata <code>read.socrata</code> function handles the HTTP request and returns the data as a dataframe with POSIX formatted dates.</p>
-<p>For doing something other than downloading the complete dataset we need to build an SoQL query. The <code>soql</code> package simplifies this step by providing functions for forming basic select queries. The query could also be written by hand, and the code below shows what that SQL-like syntax looks like.</p>
-<pre class="r"><code># Libraries used
-# library(Rscorata)
-# library(soql)
-# library(readr)
-# library(leaflet)
-# library(DT)
-library(dplyr)
-library(ggplot2)
-
-# DataSF base URL for 311 data
-api_url &lt;- &quot;https://data.sfgov.org/resource/ktji-gk7t.json?&quot;
-lim     &lt;- &quot;$limit=10&quot;
-sel     &lt;- paste(&quot;&amp;$select=service_request_id&quot;,
-             &quot;service_details,service_name&quot;,
-             &quot;supervisor_district&quot;,
-             &quot;requested_datetime&quot;,
-             &quot;closed_date&quot;,
-             &quot;lat&quot;,
-             &quot;long&quot;, 
-             sep = &quot;,&quot;)
-ord     &lt;- &quot;&amp;$order=requested_datetime DESC&quot;
-where   &lt;- paste0(&quot;&amp;$where=requested_datetime &gt; &quot;, 
-                 &quot;&#39;&quot;,Sys.Date() - 7, &quot;T12:00:00&#39;&quot;)
-query   &lt;- paste0(api_url, lim, sel, ord)
-#data   &lt;- RSocrata::read.socrata(query)  </code></pre>
-<p>The following <code>soql</code> functions perform the SQL or <code>dplyr</code> like actions of selecting, filtering and sorting:</p>
+<p>For doing something other than downloading the complete dataset we need to build an SoQL query. The <code>soql</code> package simplifies this step by providing functions for forming basic select queries. The following <code>soql</code> functions perform the SQL or <code>dplyr</code> like actions of selecting, filtering and sorting:</p>
 <p><code>soql_select</code>,<code>soql_where</code>, <code>soql_order</code>, <code>soql_simple_filter</code>.</p>
-<p>There are also a few API specific commands. <code>soql_add_endpoint</code> adds the base API URL for a particular dataset or resource. The <code>soql_limit</code> and <code>soql_offset</code> are used for paging requests, that is, grabbing the result in batches of size equal to ‘limit’ and starting at the result array position ‘offset’. The default limit is 50,000 with offset 0. For more details see the <a href="https://dev.socrata.com/docs/paging.html">Socrata API guide</a>.</p>
+<p>There are also a few API specific commands. <code>soql_add_endpoint</code> adds the base API URL for a particular dataset or resource. The <code>soql_limit</code> and <code>soql_offset</code> are used for paging requests, that is, grabbing the result in batches of size equal to ‘limit’ and starting at the result array position ‘offset’. The default limit is 50,000 with offset 0. For details or to see the <a href="https://dev.socrata.com/docs/paging.html">Socrata API guide</a>.</p>
 <p>If you need to make a higher volume of API calls you can <a href="https://dev.socrata.com/register">register for an application token</a>. You don’t need one, however, to get started using the API.</p>
-<p>I have already browsed the data some so for this call I narrow down the columns to those we’ll be using. The ‘service_name’ column is the primary service category and ‘service details’ column is the name of request sub categories. Limiting the time period to (today - a week) results in around 10-15,000 requests.</p>
-<pre class="r"><code># The API endpoint
+<p>I have already browsed the data some so for this call I narrow down the columns to those we’ll be using. The ‘service_name’ column is the primary service category and ‘service details’ column is the name of request sub categories. Limiting the time period to (today - a week) resulted in around 10-15,000 requests across all service types.</p>
+<pre class="r"><code>library(dplyr)
+library(ggplot2)
+library(leaflet)
+library(soql)
+# library(Rscorata)
+# library(readr)
+# library(DT)
+# devtools::install_github(&#39;bhaskarvk/widgetframe&#39;)
+# library(widgetframes)
+
+# The API endpoint
 api_url &lt;- &quot;https://data.sfgov.org/resource/ktji-gk7t.json&quot;
 
-query &lt;- soql::soql() %&gt;% 
-         soql::soql_add_endpoint(api_url) %&gt;%
-         soql::soql_limit(20000) %&gt;%
-         soql::soql_select(paste(
+query &lt;- soql() %&gt;% 
+         soql_add_endpoint(api_url) %&gt;%
+         soql_limit(20000) %&gt;%
+         soql_select(paste(
                  &quot;service_request_id&quot;, 
                  &quot;service_details&quot;, 
                  &quot;service_name&quot;, 
@@ -75,8 +59,8 @@ query &lt;- soql::soql() %&gt;%
                  &quot;long&quot;, 
                  sep = &quot;,&quot;
                  )) %&gt;%
-         soql::soql_order(&quot;requested_datetime&quot;, desc=TRUE) %&gt;%
-         soql::soql_where(paste0(&quot;requested_datetime &gt; &#39;&quot;,
+         soql_order(&quot;requested_datetime&quot;, desc=TRUE) %&gt;%
+         soql_where(paste0(&quot;requested_datetime &gt; &#39;&quot;,
                  Sys.Date() - 7, &quot;T12:00:00&#39;&quot;))
 data &lt;- RSocrata::read.socrata(query)</code></pre>
 </div>
@@ -98,11 +82,10 @@ data &lt;- RSocrata::read.socrata(query)</code></pre>
 </div>
 <div id="mapping-the-data" class="section level3">
 <h3>Mapping the data</h3>
-<p>Finally, we map the details from the homeless related categories. The way maps are made with the <code>leaflet</code> package is somewhat to the way a ggplot is made by adding layers. It also should be familiar to anyone who has used the <code>ggmap</code> package. The base <code>leaflet()</code> function takes the data and additional layers – tiles, polygons or markers – can be added.</p>
+<p>Now I’ll map the details from the homeless related categories. The way maps are made with the <code>leaflet</code> package is somewhat to the way a ggplot is made by adding layers. It also should be familiar to anyone who has used the <code>ggmap</code> package. The base <code>leaflet()</code> function takes the data and additional layers – tiles, polygons or markers – can be added.</p>
 <p>The <code>setView</code> function takes a center point and <code>fitBounds</code> takes the bounding longitude and latitude of the map. The <code>~</code> character can be used to reference objects in the data argument passed to the <code>leaflet</code> function. The default <code>addTiles()</code> function adds OpenStreetMap tiles and other tiles can be added using <code>addProviderTiles</code>. The demo of available leaflet providers can be found <a href="http://leaflet-extras.github.io/leaflet-providers/preview/index.html">here</a>. Adding map markers or ‘circle markers’ is mostly straightforward, although I mention one hitch below.</p>
 <p>RStudio has a thorough <a href="https://rstudio.github.io/leaflet/">introduction</a> to the package and reading the <a href="https://rstudio.github.io/leaflet/map_widget.html">map widget</a> page is a good place if you want to understand the map options in more detail.</p>
-<pre class="r"><code>library(leaflet)
-# Get data from gist 
+<pre class="r"><code># Get data from gist 
 data_url &lt;- &quot;https://git.io/v5IJV&quot;
 pit_stops &lt;- readr::read_csv(url(data_url))
 
@@ -112,7 +95,7 @@ data$service_name &lt;- as.factor(data$service_name)
 
 # Filter data
 data_hl &lt;- data %&gt;% filter(service_name %in% 
-                    c(&quot;Homeless Concerns&quot;, &quot;Encampments&quot;))
+                      c(&quot;Homeless Concerns&quot;, &quot;Encampments&quot;))
 factpal &lt;- colorFactor(pal8, as.factor(data_hl$service_details))
 
 # Map center
@@ -126,12 +109,14 @@ m &lt;- leaflet(data_hl,
     # fitBounds(-122.526441,37.692072,-122.36276,37.821818)
      setView(lng = mlong, lat = mlat, zoom = 13)
 
+# Add map tiles
 m &lt;- m %&gt;% 
      addProviderTiles(providers$MtbMap) %&gt;%
      addProviderTiles(providers$Stamen.TonerLines,
      options = providerTileOptions(opacity = 0.35)) %&gt;%
      addProviderTiles(providers$Stamen.TonerLabels)
 
+# Add request data 
 m &lt;- m %&gt;% 
      addCircleMarkers(
        lng = ~long, 
@@ -143,6 +128,7 @@ m &lt;- m %&gt;%
        stroke = FALSE, 
        fillOpacity = 0.7)
 
+# Define map markers
 icons &lt;- makeAwesomeIcon(
            icon= &#39;star-empty&#39;, 
            markerColor = &#39;gray&#39;,
@@ -150,6 +136,7 @@ icons &lt;- makeAwesomeIcon(
            library = &#39;glyphicon&#39;
            )
 
+# Add customized markers
 m &lt;- m %&gt;% 
      addAwesomeMarkers(
         lng = pit_stops$long, 
@@ -174,7 +161,7 @@ widgetframe::frameWidget(m, height = 600)</code></pre>
 </div>
 <div id="fixing-htmlwidget-rendering-issues" class="section level3">
 <h3>Fixing htmlwidget rendering issues</h3>
-<p>The <code>leaflet</code> map rendered fine until I modified the marker type which interfered with the page’s CSS for some reason. This was fixed by using the <code>widgetframe</code> package. The same issue solved the problems with using datatables from the <code>DT</code> package. In both cases, I just assigned the widget to a variable and wrapped that in the <code>frameWidget</code> function.</p>
+<p>The <code>leaflet</code> map rendered fine until I modified the marker type which interfered with the page’s CSS for some reason. This was fixed by using the <code>widgetframe</code> package. The same issue solved the problems with using datatables from the <code>DT</code> package. In both cases, I just assigned the widget to a variable passed that to the <code>frameWidget</code> function.</p>
 <p>Here is a datatable of the dataset plotted in the map above.</p>
 <pre class="r"><code># Style caption
 caption &lt;- htmltools::tags$caption(
@@ -184,7 +171,7 @@ caption &lt;- htmltools::tags$caption(
             &#39;SF 311 homeless related service requests, previous 7 days&#39;)
 
 dt1 &lt;- DT::datatable(data_hl[, c(3,4,7,8)], 
-            # Change column names
+       # Change column names
             colnames = c(&quot;Date&quot;, &quot;Service&quot;, &quot;District&quot;, &quot;Close Date&quot;), 
             height = 600, 
             caption = caption) %&gt;%
