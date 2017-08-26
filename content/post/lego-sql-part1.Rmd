@@ -58,11 +58,11 @@ Before getting started install [postgreSQL](https://www.postgresql.org/download/
 In addition to `dplyr` and `RPostgreSQL`, we will use the `readr` package was has an enhanced method for reading CSV files. Throughout the code I will be using the `::` operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using `library()` or `require()`, and it makes explicit what package individual functions come from. The exception is the pipe operator `%>%` which I use the `import` package to make available to the current session.
 
 ```{r libraries }
-# install.packages("dplyr")
-# install.packages("RPostgreSQL")
-# install.packags("readr")
-# install.packages("import") 
-# Make pipe available -- added to "imports" environment
+# library("dplyr")
+# library("RPostgreSQL")
+# library("readr")
+# library("import") 
+library(DBI)
 import::from(dplyr, "%>%")
 ```
 
