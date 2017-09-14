@@ -114,7 +114,7 @@ body,
 }
 body {
   background: #fff;
-  font: 22px 'Francois One', 'STZhongsong', '华文中宋', 'Microsoft Yahei', sans-serif;
+  font: 16px 'Faustina', 'PT Serif', '华文中宋', 'Microsoft Yahei', serif;
   -webkit-text-size-adjust: 100%;
 }
 .outer {
@@ -164,7 +164,7 @@ body {
 .logo-text {
   width: auto;
   color: #222;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 500;
   line-height: 100px;
   margin-right: 25px;
@@ -217,13 +217,13 @@ a.article-title:hover,
   font-size: 1.4em;
 }
 .article-entry h2 {
-  font-size: 1.2em;
+  font-size: 1.3em;
 }
 .article-entry h3 {
-  font-size: 1.2em;
+  font-size: 1.3em;
 }
 .article-entry h4 {
-  font-size: 1.1em;
+  font-size: 1.2em;
 }
 .article-entry h5 {
   font-size: 1em;
@@ -265,7 +265,7 @@ a.article-title:hover,
 .article-entry ul,
 .article-entry ol,
 .article-entry dl {
-  margin: 0 20px;
+  margin: 0 25px;
   line-height: 1.4em;
 }
 .article-entry ul ul,
@@ -317,7 +317,7 @@ a.article-title:hover,
   -ms-transition: opacity 0.2s;
   transition: opacity 0.2s;
   display: block;
-  padding: 36px 25px;
+  padding: 40px 20px;
 }
 .main-nav-link {
   font-weight: 500;
@@ -487,8 +487,8 @@ a.article-title:hover,
 .article-entry h5,
 .article-entry h6 {
   font-weight: 600;
-  line-height: 1.3em;
-  margin: 1em 0;
+  line-height: 1.1em;
+  margin: 0.3em 0;
 }
 .article-entry ul,
 .article-entry ol,
@@ -814,11 +814,19 @@ a.article-title:hover,
   text-align: center;
 }
 #footer a {
-  color: #fff;
   font-weight: 500;
+  border-bottom: 0px dotted #000;
+  color: #FFF;
+  text-decoration: none; 
 }
 #footer a:hover {
   font-weight: 500;
+}
+#footer-links a {
+  margin: 12px;
+  border: 20px;
+  line-height: 2;
+  text-decoration: none;
 }
 #footer-info {
   color: #ddd;

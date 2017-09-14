@@ -14,16 +14,13 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
     name = "Projects"
     url = "projects"
 [[menu.main]]
-    name = "GitHub"
-    url = "https://github.com/nateaff"
-[[menu.main]]
-    name = "Twitter"
-    url = "https://twitter.com/nateaff"
-
+    name = "About"
+    url = "about"
 
 [params]
     katex = true
-    description = "A data, math, and programming blog"
-    fontbody = "Amiri"
+    description = "Data, math, programming"
+    fontbody = "Noto Serif"
     fontheading = "Lato"
     smartToc = true
+   

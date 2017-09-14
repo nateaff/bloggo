@@ -3,8 +3,8 @@ title: "Exploring the Lego dataset with SQL and dplyr"
 author: "Nathanael Aff"
 date: 2017-07-25
 slug: exploring-lego-dataset-with-sql
-categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
+showdate: true
 ---
 
 ![](/img/lego-sqs.png)

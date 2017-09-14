@@ -2,8 +2,8 @@
 title: "Projects"
 author: Nathanael Aff
 slug: projects
-categories: ["Miscellaneous" ]
 draft: false
+showdate: false
 date: 2017-06-01
 ---
 
