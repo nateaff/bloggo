@@ -3,77 +3,209 @@ title: Lego Topic Models
 author: Nathanael Aff
 date: '2017-08-21'
 slug: lego-topic-models-rmd
-categories: ['Data Science', 'R', 'NLP']
 tags: ['Topic Models', 'EDA']
 draft: yes
+showdate: true
 ---
 
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/blazy/blazy.min.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
 
-<p>Introduction:</p>
-<p>We’ll use topic models to explore the Lego dataset.</p>
-<p>The lego sets are grouped by theme and some themes have parent themes. Do the themes follow a color scheme and can we recover the theme from the color pieces. To put this another way, if we cluster the sets by color would we find that they cluster in a way that matches their themes?</p>
-<p>One way to approach the problem is to treat colors as text. There might be another approach but this also give me an excuse to try out so</p>
-<div id="section" class="section level3">
-<h3></h3>
-<ul>
-<li>Look at color tf-idf</li>
-<li>Use perplexity to choose a number for our topic models</li>
-<li></li>
-</ul>
+<p>So I’m back to the Lego dataset. In the <a href="2017/08/16/exploring-lego-dataset-with-sql-part-ii/">previous post</a> about that dataset, the plot of the relative frequency of unique lego colors showed that a few common colors dominate Lego sets, even though there is a wide range of colors in the Lego sets on the whole. This situation is similar to that encountered with texts, where common words – articles and prepositions, for example – occur frequently but those words’ meaning doesn’t add much to a (statistical) understanding of the text.</p>
+<div class="figure">
+<img src="/img/plot-relative-1.png" />
+
 </div>
-<div id="the-themes" class="section level3">
-<h3>The themes</h3>
-<p>A number of themes had no parent. Some of these top-level parent themes but others were neither parents nor had a ‘parent_id’. I removed these themes with a single set so that the clustering wouldn’t be thrown off by too many unique themes. The <code>parent_set</code> is all those themes that are parent themes or have parent themes.</p>
-<pre><code>## [1] 614</code></pre>
-<pre><code>##  [1]  NA 171 227 264 280 482 497 302 126 252 318 400 571 112 254 276 148
-## [18] 236  67 241 465  94 204 304 147 435 504  50 258 518 123 454 180  23
-## [35] 390  52 524 529 591 273 296   1 484 324 290 507 233 206 279 562 408
-## [52] 443 158  22 373 566 411 478 494 535 501  38 207 155 458 365 217 287
-## [69] 315 246 105 159 307 186 475   5 561 580 425</code></pre>
-<p>There are () unique themes including some subthemes. My guess is that while some themes will have a unique color signature, there will be</p>
-<pre><code>## [1] TRUE</code></pre>
-<pre><code>## # A tibble: 6 x 7
-##   set_num                 name            theme theme_id  year      rgba
-##     &lt;chr&gt;                &lt;chr&gt;            &lt;chr&gt;    &lt;int&gt; &lt;int&gt;     &lt;chr&gt;
-## 1  6852-1       Sonar Security  Space Police II      140  1993 #05131DFF
-## 2 76076-1 Captain America Jet            Marvel      493  2017 #C91A09FF
-## 3  6087-1  Witch&#39;s Magic Manor   Fright Knights      195  1997 #05131DFF
-## 4 41147-1 Anna&#39;s Snow Adventur             &lt;NA&gt;      579  2017 #ADC3C0FF
-## 5 70009-1 Worriz’s Combat Lair Legends of Chima      571  2013 #6C6E68FF
-## 6 30034-1     Racing Tow Truck      Tiny Turbos      120  2010 #F2CD37FF
-## # ... with 1 more variables: quantity &lt;int&gt;</code></pre>
+<p>In this post, I use a few techniques associated with text mining to explore the color themes of Lego sets. In particular, I’ll build a topic model of Lego color themes using LDA. Like kmeans clustering, the LDA model requires the user to choose the number of topics <span class="math inline">\(k\)</span>. I try out several scoring methods available in R to evaluate the best number of color themes for our Lego sets.</p>
+<div class="figure">
+<img src="/img/lego-all-colors-1.png" />
+
 </div>
-<div id="tf-idf" class="section level3">
-<h3>TF-IDF</h3>
-<p>Definition of tf-idf</p>
-<p>We expect the top tf-idf entries to be sets with a much higher than average number of some rare color while low color and set combinations with low tf-idf … common color.</p>
-<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/tf-idf-1.png" width="624" style="display: block; margin: auto;" /><img src="/post/2017-08-21-lego-topic-models_files/figure-html/tf-idf-2.png" width="624" style="display: block; margin: auto;" /></p>
+<div id="note-on-code-and-r-package-shout-outs" class="section level2">
+<h2>Note on code and <code>R</code> package shout-outs</h2>
+<p>The code for generating the analysis and plots, along with a little math background on the evaluation methods, is in <a href="github.com/nateaff/legolda">this repo</a>.</p>
+<p>One motivation for doing this analysis was to try some methods from the handy <a href="tidytextmining.com">Text Mining in R</a> book by Julia Silge and David Robinson and my code follows their examples. In particular in the TF-IDF section and the analysis of the distribution of documents over the topics. The LDA model is trained using the function from the <code>topicmodels</code> package which depends on <code>tm</code>. Evaluation methods come from <code>ldatuning</code>, <code>SpeedReader</code>, and the <code>clues</code> packages. Unit plots use the <code>waffle</code> package. Code for the analysis and results for some of the intermediate computations is available <a href="https://nateaff.github.io/legolda/index.html">here</a> or you can look at the <a href="kaggle.com/nateaff/finding-lego-color-themes-with-topic-models">Kaggle notebook</a>.</p>
 </div>
-<div id="lda" class="section level3">
-<h3>LDA</h3>
-<p>Definition</p>
-<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/load-lda-1.png" width="624" style="display: block; margin: auto;" /></p>
+<div id="color-tf-idf" class="section level1">
+<h1>Color TF-IDF</h1>
+<p>The Lego dataset contains around 11,000 Lego sets from 1950 to 2017 and the data includes the part numbers and brick colors that make up each set. Following the text mining analogy, I take Lego sets to be the documents that make up the Lego ‘corpus’ and colors are the ‘words’ that make up each document or set. (I ignored part numbers.)</p>
+<p>From the frequency plot, it’s clear a few primary colors along with black, gray, and white make up the majority of brick colors. In text mining, one might remove some set of stop words that are common to all documents. In our case, there are just 125 unique colors so I chose to use all colors in the analysis.</p>
+<p>TF-IDF is one way to look at which words are more meaningful to each document. Word frequency per document is weighted(inversely) by the number of documents the word occurs in. A high TF-IDF(term frequency <span class="math inline">\(\times\)</span> inverse document frequency) corresponds to a color that most distinctly identifies a Lego set.</p>
+<div id="low-tf-idf-colors" class="section level2">
+<h2>Low TF-IDF colors</h2>
+<p>First, we’ll look at <em>low</em> TF-IDF colors. Many of the colors are the primary colors, along with black, white and gray, that show up as common colors in relative-frequency plot above. These might be candidates for ‘stop colors’.</p>
+<div class="figure">
+<img src="/img/figure/tf-idf.Rmd/low-tf-idf-plot-1.png" />
+
 </div>
-<div id="topic-modeling" class="section level3">
-<h3>Topic Modeling</h3>
-<p><a href="http://tidytextmining.com/topicmodeling.html">Tidytext</a></p>
-<p>Note that tidy returns the Beta or Gamma matrix along with the term and topic in a tidy (long) data frame. Here a term is a color.</p>
-<p><img src="/post/2017-08-21-lego-topic-models_files/figure-html/top-terms-1.png" width="624" style="display: block; margin: auto;" /><img src="/post/2017-08-21-lego-topic-models_files/figure-html/top-terms-2.png" width="624" style="display: block; margin: auto;" /></p>
-<p>The Gamma is the posterior distirbution over topics. The Beta distribution is the generative model or distribution from which a given topic is drawn. (Clarify)</p>
-<pre><code>##  [1] &quot;Mini VW Beetle&quot;       &quot;My First Bus&quot;         &quot;Volkswagen Beetle&quot;   
-##  [4] &quot;Dragon Pod&quot;           &quot;My First Number Trai&quot; &quot;Lightning Dragon Bat&quot;
-##  [7] &quot;Big Construction Sit&quot; &quot;Colored Globes&quot;       &quot;Gorzan’s Gorilla Str&quot;
-## [10] &quot;Construction&quot;         &quot;Miles&#39; Space Adventu&quot; &quot;Crawley&quot;             
-## [13] &quot;Ship Promotional (Du&quot; &quot;LEGO Star Wars Jedi &quot; &quot;Krypto Saves the Day&quot;
-## [16] &quot;Baby Calf&quot;            &quot;Cole&#39;s Dragon&quot;        &quot;Petrol Station&quot;      
-## [19] &quot;The Joker Mini Mech &quot; &quot;Creative Builder Box&quot;</code></pre>
-<pre><code>##  [1] &quot;Friends Tic-Tac-Toe&quot;  &quot;Organiser&quot;            &quot;Doll&#39;s House&quot;        
-##  [4] &quot;Party Train&quot;          &quot;Friends Party Set&quot;    &quot;Disney Princess™ Col&quot;
-##  [7] &quot;Heartlake Dog Show&quot;   &quot;Desk&quot;                 &quot;This moments&quot;        
-## [10] &quot;Sunshine Harvest&quot;     &quot;All-in-One-Pink-Box-&quot; &quot;Minnie&#39;s Cafe&quot;       
-## [13] &quot;Stephanie&#39;s Friendsh&quot; &quot;Mia&#39;s Bedroom&quot;        &quot;Pony Farm&quot;           
-## [16] &quot;My First Plane&quot;       &quot;Olivia&#39;s Ice Cream B&quot; &quot;Emma&#39;s Ice Cream Tru&quot;
-## [19] &quot;Amusement Park Hot D&quot; &quot;Stephanie’s Pet Patr&quot;</code></pre>
-<p>Do they match the sets?</p>
+<div id="low-tf-idf-sets" class="section level3">
+<h3>Low TF-IDF sets</h3>
+<p>The three sets below are actually the 7-10th lowest TF-IDF set-color combinations. In common with the other low TF-IDF sets, these are large sets with a somewhat frequent colors that appears less frequently in the set than in the corpus. For example, the darker gray in the <code>First Lego League</code> set makes up a small proportion of the set but occurs in many sets.</p>
+<div class="figure">
+<img src="/img/figure/tf-idf.Rmd/low-tf-idf-plots1-1.png" />
+
+</div>
+</div>
+</div>
+<div id="high-tf-idf-colors" class="section level2">
+<h2>High TF-IDF colors</h2>
+<p>The plot below shows the 10 set-color pairs with the highest TF-IDF score. These are represented by sets with a <em>high</em> proportion of the set made up of a color that shows up <em>infrequently</em> in Lego sets overall. The ‘Statue of Liberty’ set, for example, is made up almost entirely of a single sea-green color that doesn’t occur in other sets.</p>
+<div class="figure">
+<img src="/img/figure/tf-idf.Rmd/top-tf-idf-plot-1.png" />
+
+</div>
+<div id="high-tf-idf-sets" class="section level3">
+<h3>High TF-IDF sets</h3>
+<div class="figure">
+<img src="/img/figure/tf-idf.Rmd/top-tf-idf-sets-1.png" />
+
+</div>
+</div>
+</div>
+</div>
+<div id="building-a-topic-model" class="section level1">
+<h1>Building a topic model</h1>
+<p>After that somewhat cursory look at the Lego sets, we’ll move on to building a topic model. The latent Dirichlet allocation(LDA) model is a generative model of a body of documents (or Lego sets or genetic markers or images). The output of the LDA algorithm is two distributions which represent the distribution of terms that make up a topic and the distribution of topics that make up a document. For our model, the <em>term distribution</em> is a distribution over <em>colors</em> that make up a <em>color theme</em>, while the Lego sets are drawn from a distribution of topics (here color themes). In this model, a Lego set can be generated by one theme or many themes.</p>
+</div>
+<div id="evaluation-methods" class="section level1">
+<h1>Evaluation methods</h1>
+<p>I used several methods (chosen because they were readily available in R packages) for evaluating the number of topics that make up the topic model, but this is not meant to be an exhaustive list of automated topic evaluation methods. For gaging topic coherence, for example, the Python Gensim library has a more complete pipeline which includes options to modify segmentation, probability estimation, and scoring methods.</p>
+<div id="cross-validation-on-perplexity" class="section level2">
+<h2>Cross validation on perplexity</h2>
+<p>One method to test how well the learned distributions fit our data is to compare the distribution learned on a training set to the distribution of a holdout set. Perplexity is one measure of the difference between distributions and the <code>topicmodels</code> package has a method for computing perplexity. Building topic models is computationally intensive and this was the only evaluation method that required cross-validation.</p>
+<div id="topic-grid" class="section level3">
+<h3>Topic grid</h3>
+<p>I initially ran a test run on a sample set to give me an idea of where I might use a denser grid to check for topic numbers. This wasn’t the greatest idea, as I found out later, since using a smaller data set tended to shift the perplexity scores leftward indicating fewer topics were ideal. I ended up running the cross-validation twice and refined the spacing on the parameter grid to capture both the larger trend and some detail where I thought better parameter <span class="math inline">\(k\)</span> was located.</p>
+<p>The smoothed fit (in black) appears to bend around 25-30 and it would have been nice to have another evaluation at 25.</p>
+<div class="figure">
+<img src="/img/figure/train-model.Rmd/cv-result-plot-1.png" />
+
+</div>
+</div>
+</div>
+<div id="measures-on-the-full-models" class="section level2">
+<h2>Measures on the full models</h2>
+<p>After running cross-validation on the perplexity scores I reduced the number of models for the remaining evaluation methods. The remaining methods used models trained on the full data set.</p>
+</div>
+<div id="ldatuning" class="section level2">
+<h2>Ldatuning</h2>
+<p>The <code>ldatuning</code> package has several other metrics of the quality of the topic models. The skimmed the references in the package documentation but I don’t really understand these measures. At least two of the measures agree that fewer topics are better.</p>
+<div class="figure">
+<img src="/img/figure/train-model.Rmd/ldatuning-scores-1.png" />
+
+</div>
+</div>
+<div id="topic-coherence" class="section level2">
+<h2>Topic coherence</h2>
+<p>There are several versions of topic coherence which measure the pairwise strength of the relationship of the top terms in a topic model. Given some score, where a larger value indicates a stronger relationship between two words <span class="math inline">\(w_i, w_j\)</span>, a generic coherence score is the sum of the top terms in a topic model:</p>
+<p><span class="math display">\[ \sum_{w_i, w_j \in W_t} \text{Score}(w_i, w_j), \]</span> with top terms <span class="math inline">\(W_t\)</span> for each topic <span class="math inline">\(t\)</span>.</p>
+<p>The coherence score used in the <code>SpeedReader</code> <code>topic_coherence</code> function uses the internal coherence(Umass) of the top terms. I compared the scores for the top 3, 5 and 10 terms.</p>
+<div class="figure">
+<img src="/img/figure/train-model.Rmd/coherence-score-1.png" />
+
+</div>
+</div>
+<div id="external-validation-with-cluster-scoring" class="section level2">
+<h2>External validation with cluster scoring</h2>
+<p>We can also treat the LDA models as a clustering of the Lego sets by assign each Lego set to the topic which makes up the highest proportion of that set, that is, the highest probability of a topic <span class="math inline">\(t\)</span> given a document <span class="math inline">\(d\)</span> <span class="math display">\[
+\text{gamma} \equiv \gamma = p(t|d).
+\]</span> We then assign a document to a cluster by taking <span class="math display">\[
+ \text{argmax}_t p(t|d).
+\]</span></p>
+<p>For comparison’s sake, I also ran a kmeans clustering using the weighted term(color) distribution for each document as the vector that representing that set.</p>
+<p>The kmeans and LDA clusterings were evaluated against each sets <code>parent_id</code> label which indicated the theme of the Lego set. In total there were around 100 unique parent themes although this included sets who were ‘childless parents’.</p>
+</div>
+<div id="cluster-scores" class="section level2">
+<h2>Cluster scores</h2>
+<p>The clusters scores include Rand, adjusted Rand, Folkes-Mallow and Jaccard scores. All try to score a clustering on how well the discovered labels match the assigned <code>parent_id</code>. The Rand index assigns a score based on the number pairwise agreement of the cluster labels with the original labels. The other scores use a similar approach and two are versions of the Rand score but adjusted for random agreement. All scores except the un-adjusted Rand index decrease with more topics.</p>
+<p>There’s no reason to assume that theme labels match color topics. Poking around the data indicated that some themes ids are closely associated with a palette (Duplo, for example) while other parent themes are general categories with a mix of color theme.</p>
+<div class="figure">
+<img src="/img/figure/train-model.Rmd/plot-external-scores-1.png" />
+
+</div>
+</div>
+<div id="topic-distribution" class="section level2">
+<h2>Topic Distribution</h2>
+<p>The last method for evaluating the learned topics is to look at how documents are distributed over the topic distributions. This example follows a <a href="http://tidytextmining.com/nasa.html#calculating-tf-idf-for-the-description-fields">this section</a> from the tidytext mining book.</p>
+<p>The plot below visualizes this as how the <em>documents</em> are distributed over the probability bins for each <em>topic</em>. If too many topics have sets or documents in the low probability bins then you may have too many topics, since few documents are strongly associated with any topic.</p>
+<div class="figure">
+<img src="/img/figure/train-model.Rmd/plot-40-topics-1.png" />
+
+</div>
+<p>The chart above is also closely related to clustering based on LDA. If the distribution over the high probability bins of a topic is sparse then few Lego sets would be assigned to that topic. (You can compare the plot above to the to the total distribution of Lego sets over these topics below. Topic 40 had the fewest sets assigned to it.)</p>
+</div>
+</div>
+<div id="evaluation-results" class="section level1">
+<h1>Evaluation results</h1>
+<p>None of the preceding evaluation methods seem particularly conclusive. The pattern of diminishing returns on the perplexity scores is similar to other model complexity scores and suggests a value for <span class="math inline">\(k\)</span> in the 25-35 range. This agrees somewhat with a visual evaluation of the set distribution over topic probabilities (the last chart above), where at 40 topics some topics seem to have few documents closely associated with them.</p>
+</div>
+<div id="color-distributions-over-topics" class="section level1">
+<h1>Color distributions over topics</h1>
+<p>Aside from these scoring methods, we can also plot the color distribution(or relevance) for each topic or color theme directly. Below are charts for the models with 30 and 40 topics.</p>
+<p><img src="/img/figure/compare-model-distributions.Rmd/color-distribution-1.png" /><br />
+<img src="/img/figure/compare-model-distributions.Rmd/color-distribution-2.png" /></p>
+<p>The above plot is based on the beta <span class="math inline">\(\beta\)</span> matrix, which gives the posterior distribution of words given a topic, <span class="math inline">\(p(w|t)\)</span>. The above plot shows a weighted <span class="math inline">\(\beta\)</span> (or relevance) like that used in the <a href="http://www.kennyshirley.com/LDAvis/#topic=0&amp;lambda=0.61&amp;term="><code>LDAvis</code> package</a>.</p>
+<p><span class="math display">\[ \text{relevance}(w|t) = \lambda \cdot p(w|t) + (1-\lambda)\cdot \frac{p(w|t)}{p(w)}.\]</span></p>
+<div id="how-many-themes" class="section level2">
+<h2>How many themes?</h2>
+<p>Although there may be more topics that have few sets associated with them as we increase the number of topics, the coherence of a few topics appears to improve.</p>
+<p>For example, the two plots below are selections from sets with the highest gamma, <span class="math inline">\(p(d|t)\)</span> for each topic. When we go from 30 to 40 topics the top sets in the topic are removed by the remaining sets are more visually similar. (Also note that the sets that stayed had the top relevance score or weighted <span class="math inline">\(\beta\)</span>).</p>
+<div id="topic-2-from-the-30-topic-model" class="section level4">
+<h4>Topic 2 from the 30 topic model</h4>
+<p><img src="/img/figure/compare-model-distributions.Rmd/topic-waffle-2-2-1.png" /> <br></p>
+<div class="kable">
+<div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2017-08-21-lego-topic-models_files/figure-html//widgets/widget_topic-view-2-2.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+<p><br></p>
+</div>
+<div id="topic-2-from-40-topic-model" class="section level4">
+<h4>Topic 2 from 40 topic model</h4>
+<div class="figure">
+<img src="/img/figure/compare-model-distributions.Rmd/topic-waffle-3-2-1.png" />
+
+</div>
+<div class="kable">
+<div id="htmlwidget-2" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2017-08-21-lego-topic-models_files/figure-html//widgets/widget_topic-view-3-2.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+<p><br></p>
+<p>I’ll plot one more topic from the 40 topic model that looked ‘suspicious’ but a sampling of the top sets seem to go well together.</p>
+</div>
+<div id="topic-32-from-40-topic-model" class="section level4">
+<h4>Topic 32 from 40 topic model</h4>
+<div class="figure">
+<img src="/img/figure/compare-model-distributions.Rmd/topic-waffle-3-32-1.png" />
+
+</div>
+<div class="kable">
+<div id="htmlwidget-3" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2017-08-21-lego-topic-models_files/figure-html//widgets/widget_topic-view-3-32.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+<div id="evaluation-summary" class="section level2">
+<h2>Evaluation summary</h2>
+<p>Of the automated scoring methods, the perplexity scores and the distribution of topics over term probabilities were the only two that seemed readily interpretable and matched my personal sense of which model best identified coherent color themes.</p>
+</div>
+</div>
+<div id="lego-color-themes" class="section level1">
+<h1>Lego color themes</h1>
+<p>For the final model, I used the 40 topic model. Although LDA models the Lego sets as mixtures of topics or themes, for the next two charts I assigned each set to a single topic using the same method that I used for clustering. And topics are a mixture of colors but I chose a color to represent each topic by blending the topic’s two most important color terms.</p>
+<p>In the last plot, the topics are represented by color probabilities of that topic: 1 brick represents roughly 1% of the distribution.</p>
+<div class="figure">
+<img src="/img/figure/final-model.Rmd/plot-topic-distribution-1.png" />
+
+</div>
+<div class="figure">
+<img src="/img/figure/final-model.Rmd/plot-topic-timeline-1.png" />
+
+</div>
+<div class="figure">
+<img src="/img/figure/color-themes-big.png" />
+
+</div>
 </div>

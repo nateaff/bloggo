@@ -3,3 +3,5 @@ ggplot2
 dplyr
 bindrcpp
 topicmodels
+legolda
+DBI

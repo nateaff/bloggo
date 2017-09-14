@@ -1,0 +1,47 @@
+Comms 
+  > Presentations
+  > Life stories
+  > Etc.
+
+Art & Design
+  > Generative 
+  > Graphic
+  > Visualization
+  > Typography
+
+
+Programming/Computer Science
+  > Creative processing
+  > Combinatorics
+
+DATA
+  > NLP
+  > EDA 
+  > AWS 
+  > Databases 
+  > APIs
+  > Viz
+  > Tutorials
+    > R
+    > Python 
+    > SQL  
+  > Satistics
+    > 
+  > Machine Learning 
+    > Neural Networks 
+    > Trees
+    > Linear Models 
+    > 
+
+Math
+  > Statistics
+    > Time Series 
+    > Graphical Models 
+    > Linear Models
+  > Linear Algebra
+  > Topology
+  > Algebra
+  > Combinatorics
+  > Probability
+  > Opimization
+

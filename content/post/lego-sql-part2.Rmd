@@ -3,8 +3,8 @@ title: "Exploring the Lego dataset with SQL and dplyr, part II"
 author: Nathanael Aff
 date: '2017-08-16'
 slug: exploring-lego-dataset-with-sql-part-ii
-categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
+showdate: true
 ---
 
 ![](/img/lego-colors.png)
@@ -275,6 +275,7 @@ freq_tbl <- set_colors %>% select(year, rgb, color_id) %>%
               group_by(year, rgb) %>%
               summarise(n = n()) %>% 
               mutate(percent = n/sum(n))
+
 # Plot color occurences only
 gp <-  freq_tbl %>%   ggplot() + 
           geom_bar(aes(x = year, fill = rgb)) + 

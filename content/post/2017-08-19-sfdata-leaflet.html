@@ -3,9 +3,9 @@ title: Mapping San Francisco's open data with leaflet
 author: Nathanael Aff
 date: '2017-08-19'
 slug: sf-311-data-leaflet
-categories: ['Data Science', 'R']
-tags: ['EDA', 'R', 'Leaflet']
+tags: ['EDA', 'APIs', 'Maps', 'Leaflet']
 draft: no
+showdate: true
 ---
 
 <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
@@ -144,6 +144,12 @@ m &lt;- m %&gt;%
         label = pit_stops$name,
         icon = icons
         ) 
+
+caption &lt;- htmltools::tags$caption(
+             style = paste0(
+                      &#39;caption-side: top;&#39;,  
+                      &#39;text-align: left;&#39;),  
+            &#39;SF 311 homeless related service requests, previous 7 days&#39;)
 
 m &lt;- m %&gt;% addLegend(
         &quot;bottomleft&quot;, 

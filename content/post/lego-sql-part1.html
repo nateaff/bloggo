@@ -3,8 +3,8 @@ title: "Exploring the Lego dataset with SQL and dplyr"
 author: "Nathanael Aff"
 date: 2017-07-25
 slug: exploring-lego-dataset-with-sql
-categories: ["Data Science","R" ]
 tags: ["R", "SQL", "eda"]
+showdate: true
 ---
 
 
@@ -41,11 +41,11 @@ tags: ["R", "SQL", "eda"]
 <div id="setup-and-download" class="section level2">
 <h2>Setup and download</h2>
 <p>In addition to <code>dplyr</code> and <code>RPostgreSQL</code>, we will use the <code>readr</code> package was has an enhanced method for reading CSV files. Throughout the code I will be using the <code>::</code> operator to identify the namespace R searches for function calls from these packages. Calling functions this way avoids the need to load a package using <code>library()</code> or <code>require()</code>, and it makes explicit what package individual functions come from. The exception is the pipe operator <code>%&gt;%</code> which I use the <code>import</code> package to make available to the current session.</p>
-<pre class="r"><code># install.packages(&quot;dplyr&quot;)
-# install.packages(&quot;RPostgreSQL&quot;)
-# install.packags(&quot;readr&quot;)
-# install.packages(&quot;import&quot;) 
-# Make pipe available -- added to &quot;imports&quot; environment
+<pre class="r"><code># library(&quot;dplyr&quot;)
+# library(&quot;RPostgreSQL&quot;)
+# library(&quot;readr&quot;)
+# library(&quot;import&quot;) 
+library(DBI)
 import::from(dplyr, &quot;%&gt;%&quot;)</code></pre>
 <p>First, we need to create a project directory – I’ll be calling it ‘lego-project’ – and set your current directory to that folder. There are a lot of unhelpful warnings so I’m suppressing those for the session by setting the option <code>options(warn=-1)</code>. You can skip this line if you’d like to see all the warnings.</p>
 <pre class="r"><code>setwd(&quot;~/path/to/my/lego-project&quot;)

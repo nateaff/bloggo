@@ -3,7 +3,19 @@
         <div id="footer-info" class="inner">
             {{ template "_internal/disqus.html" . }}
             &copy; {{ now.Format "2006"}} {{ or .Site.Author .Site.Title }}&nbsp;
+            
             Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+        </div>
+        <div id = "footer-links" class = "footer-group"> 
+            <a class = "icon-link" href = "https://github.com/nateaff">
+            <i class="fa fa-github fa-lg" aria-hidden="true"></i>
+            &nbsp;</a> 
+            <a  class = "icon-link" href = "https://twitter.com/nateaff">
+            <i class="fa fa-twitter fa-lg" aria-hidden="true"></i>
+            &nbsp;</a> 
+            <a  class = "icon-link" href = "https://linkedin/in/nathanaelaff"> <i class="fa fa-linkedin fa-lg" aria-hidden="true"></i>
+            &nbsp;</a> 
+            </div>
         </div>
     </div>
     {{ template "_internal/google_analytics_async.html" . }}
