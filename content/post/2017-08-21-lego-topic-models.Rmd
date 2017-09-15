@@ -1,8 +1,8 @@
 ---
-title: Lego Topic Models
+title: Lego color themes as topic models
 author: Nathanael Aff
 date: '2017-09-11'
-slug: lego-topic-models-rmd
+slug: lego-topic-models
 tags: ['Topic Models', 'EDA']
 draft: false
 showdate: true
@@ -25,11 +25,17 @@ knitr::opts_chunk$set(
 
 So I'm back to the Lego dataset. In the [previous post](2017/08/16/exploring-lego-dataset-with-sql-part-ii/) about that dataset, the plot of the relative frequency of unique lego colors showed that a few common colors dominate Lego sets, even though there is a wide range of colors in the Lego sets on the whole. This situation is similar to that encountered with texts, where common words -- articles and prepositions, for example -- occur frequently but those words' meaning doesn't add much to a (statistical) understanding of the text. 
 
-![](/img/plot-relative-1.png)
+```{r freq, out.height = "500px", out.width = "600px", echo=FALSE}
+knitr::include_graphics("/img/plot-relative-1.png")
+```
+
 
 In this post, I use a few techniques associated with text mining to explore the color themes of Lego sets. In particular, I'll build a topic model of Lego color themes using LDA. Like kmeans clustering, the LDA model requires the user to choose the number of topics $k$. I try out several scoring methods available in R to evaluate the best number of color themes for our Lego sets. 
 
-![](/img/lego-all-colors-1.png) 
+
+```{r all-colors, out.height = "500px", out.width = "600px", echo=FALSE}
+knitr::include_graphics("/img/lego-all-colors-1.png")
+```
 
 ## Note on code and `R` package shout-outs  
 
@@ -274,9 +280,14 @@ For the final model, I used the 40 topic model. Although LDA models the Lego set
 
 In the last plot, the topics are represented by color probabilities of that topic: 1 brick represents roughly 1% of the distribution.
 
+
 ![](/img/figure/final-model.Rmd/plot-topic-distribution-1.png)
 
+<br>
+
 ![](/img/figure/final-model.Rmd/plot-topic-timeline-1.png)
+
+<br>
 
 ![](/img/figure/color-themes-big.png)
 
