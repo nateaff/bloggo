@@ -11,6 +11,7 @@ showdate: true
 ```{r chunk-options, echo = FALSE}
 knitr::opts_chunk$set(
   cache = FALSE,
+  autodep = TRUE,
   comment = NA,
   fig.align = "center",
   tidy = FALSE,
@@ -38,9 +39,9 @@ knitr::include_graphics("/img/lego-all-colors-1.png")
 
 ## Note on code and `R` package shout-outs  
 
-The code for generating the analysis and plots, along with a little math background on the evaluation methods, is in [this repo](github.com/nateaff/legolda) and this [Kaggle notebook](kaggle.com/nateaff/finding-lego-color-themes-with-topic-models) as the same analysis but run a smaller sample of sets.
+The code for generating the analysis and plots, along with a little math background on the evaluation methods, is in [this repo](https://github.com/nateaff/legolda) and this [Kaggle notebook](https://www.kaggle.com/nateaff/finding-lego-color-themes-with-topic-models) as the same analysis but run a smaller sample of sets.
 
-One motivation for doing this analysis was to try some methods from the handy [Text Mining in R](tidytextmining.com) book by Julia Silge and  David Robinson and some of my code follows their examples. In particular, in the TF-IDF section and the analysis of the distribution of documents over the topics. 
+One motivation for doing this analysis was to try some methods from the handy [Text Mining in R](http://tidytextmining.com) book by Julia Silge and  David Robinson and some of my code follows their examples. In particular, in the TF-IDF section and the analysis of the distribution of documents over the topics. 
 
 The LDA model is trained using the `LDA` function from the `topicmodels` package. Evaluation methods come from `ldatuning`, `SpeedReader`, and the `clues` packages. Unit plots use the `waffle` package. 
 

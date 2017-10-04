@@ -1,0 +1,9 @@
+data2	api_url	data	query	token
+data3	
+barplot1	caption	data	pal	pal8	subtitle	svc_counts	theme_min2
+timeseries1	counts	gp	len	n	pal	top
+barplot2	counts	len	pal
+barplot3	data_hl	pal8
+timeseries2	counts	gp	len	pal
+map	caption	data	data_hl	data_url	factpal	icons	m	mlat	mlong	pit_stops	.2017-08-19-sfdata-leaflet_cache/html/map_b92b8b4867123f6c298b320c2fa2a1b7_meta
+datatable	caption	dt1	.2017-08-19-sfdata-leaflet_cache/html/datatable_3fd8922a6580d669f479ff765d70eb07_meta

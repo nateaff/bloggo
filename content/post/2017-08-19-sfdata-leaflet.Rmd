@@ -11,6 +11,7 @@ showdate: true
 ```{r global_options, echo=FALSE}
 knitr::opts_chunk$set(
        knitr::opts_chunk$set(cache=TRUE),
+       autodep = TRUE,
        fig.align = 'center', 
        echo=FALSE, 
        warning=FALSE, 
