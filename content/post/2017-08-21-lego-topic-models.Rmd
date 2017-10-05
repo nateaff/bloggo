@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
   fig.align = "center")
 ```
 
-So I'm back to the LEGO dataset. In a [previous post](2017/08/16/exploring-lego-dataset-with-sql-part-ii/), the plot of the relative frequency of LEGO colors showed that, although there is a wide range of colors on the whole, just a few make up the majority of brick colors. This situation is similar to that encountered with texts, where common words -- articles and prepositions, for example -- occur frequently but those words' meaning doesn't add much to a (statistical) understanding of the text. 
+So I'm back to the LEGO dataset. In a [previous post](/2017/08/16/exploring-lego-dataset-with-sql-part-ii/), the plot of the relative frequency of LEGO colors showed that, although there is a wide range of colors on the whole, just a few make up the majority of brick colors. This situation is similar to that encountered with texts, where common words -- articles and prepositions, for example -- occur frequently but those words' meaning doesn't add much to a (statistical) understanding of the text. 
 
 ```{r freq, out.height = "500px", out.width = "600px", echo=FALSE}
 knitr::include_graphics("/img/plot-relative-1.png")
